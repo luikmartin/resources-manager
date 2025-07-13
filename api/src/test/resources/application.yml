@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: resources-manager-test
+
+  profiles:
+    active: test
+
+  datasource:
+    url: jdbc:tc:postgresql:15:///testdb
+    username: test
+    password: test
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  liquibase:
+    change-log: classpath:db/liquibase/liquibase-master.xml
+    enabled: true
+    drop-first: true
+
+logging:
+  level:
+    com.martinluik.resourcesmanager: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    liquibase: INFO
+    liquibase.executor: DEBUG
+    liquibase.changelog: DEBUG
+    liquibase.database: DEBUG

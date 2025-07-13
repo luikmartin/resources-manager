@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <include file="db/liquibase/migrations/2025/03-07-2035-create-schema.sql"/>
+    <include file="db/liquibase/migrations/2025/03-07-2039-create-location-table.sql"/>
+    <include file="db/liquibase/migrations/2025/03-07-2038-create-resource-table.sql"/>
+    <include file="db/liquibase/migrations/2025/03-07-2040-create-characteristic-table.sql"/>
+    <include file="db/liquibase/migrations/2025/03-07-2041-insert-sample-data.sql"/>
+
+</databaseChangeLog> 

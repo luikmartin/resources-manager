@@ -1,0 +1,88 @@
+// Multi-module build configuration for the parent project
+plugins {
+    id 'org.springframework.boot' version '3.5.3' apply false
+    id 'io.spring.dependency-management' version '1.1.7' apply false
+    id 'base'
+}
+
+ext {
+    versions = [springBoot                : '3.5.3',
+                springDependencyManagement: '1.1.7',
+                lombok                    : '1.18.30',
+                jetbrainsAnnotations      : '24.1.0',
+                liquibase                 : '4.27.0',
+                springdoc                 : '2.3.0',
+                testcontainers            : '1.20.3']
+
+    libs = [springBootStarter          : "org.springframework.boot:spring-boot-starter",
+            springBootStarterWeb       : "org.springframework.boot:spring-boot-starter-web",
+            springBootStarterActuator  : "org.springframework.boot:spring-boot-starter-actuator",
+            springBootStarterDataJpa   : "org.springframework.boot:spring-boot-starter-data-jpa",
+            springBootStarterValidation: "org.springframework.boot:spring-boot-starter-validation",
+            springBootStarterTest      : "org.springframework.boot:spring-boot-starter-test",
+            springBootStarterKafka     : "org.springframework.kafka:spring-kafka",
+
+            jacksonDatabind            : "com.fasterxml.jackson.core:jackson-databind",
+            jacksonCore                : "com.fasterxml.jackson.core:jackson-core",
+            lombok                     : "org.projectlombok:lombok",
+            jetbrainsAnnotations       : "org.jetbrains:annotations:${versions.jetbrainsAnnotations}",
+            hibernateValidator         : "org.hibernate.validator:hibernate-validator",
+            postgresql                 : "org.postgresql:postgresql",
+            liquibaseCore              : "org.liquibase:liquibase-core:${versions.liquibase}",
+            springdocOpenapi           : "org.springdoc:springdoc-openapi-starter-webmvc-ui:${versions.springdoc}",
+            testcontainersPostgresql   : "org.testcontainers:postgresql:${versions.testcontainers}",
+            testcontainersJunitJupiter : "org.testcontainers:junit-jupiter:${versions.testcontainers}",
+            testcontainersKafka        : "org.testcontainers:kafka:${versions.testcontainers}"]
+}
+
+allprojects {
+    group = 'com.martinluik'
+    version = '0.0.1-SNAPSHOT'
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'io.spring.dependency-management'
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
+
+    configurations {
+        compileOnly {
+            extendsFrom annotationProcessor
+        }
+    }
+
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.boot:spring-boot-dependencies:${versions.springBoot}"
+        }
+    }
+
+    dependencies {
+        compileOnly libs.lombok
+        annotationProcessor libs.lombok
+    }
+
+    tasks.named('test') {
+        useJUnitPlatform()
+        jvmArgs '-XX:+EnableDynamicAgentLoading'
+    }
+}
+
+// Ensure 'clean' on root cleans all subprojects
+if (project == rootProject) {
+    tasks.named('clean') {
+        dependsOn subprojects.collect { it.tasks.named('clean') }
+    }
+    tasks.named('build') {
+        dependsOn subprojects.collect { it.tasks.named('build') }
+    }
+}

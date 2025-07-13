@@ -1,0 +1,13 @@
+plugins {
+    id 'java'
+}
+
+dependencies {
+    implementation libs.liquibaseCore
+}
+
+// Configure the jar task to include resources
+jar {
+    from sourceSets.main.resources
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+} 

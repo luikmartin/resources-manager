@@ -1,0 +1,40 @@
+# Exclude build artifacts
+**/build/
+**/target/
+**/.gradle/
+
+# Exclude IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Exclude version control
+.git/
+.gitignore
+
+# Exclude documentation
+*.md
+POSTMAN_COLLECTION_README.md
+
+# Exclude test resources not needed in production
+**/src/test/
+
+# Exclude logs
+**/*.log
+**/logs/
+
+# Exclude temporary files
+**/*.tmp
+**/*.temp
+**/.DS_Store
+**/Thumbs.db
+
+# Exclude Docker files themselves
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Exclude Gradle wrapper jar (it will be copied specifically)
+!gradle/wrapper/gradle-wrapper.jar 

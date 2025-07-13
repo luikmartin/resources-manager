@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: resources-manager
+
+  docker:
+    compose:
+      file: docker/docker-compose.yml
+
+  liquibase:
+    change-log: classpath:/db/liquibase/liquibase-master.xml
+    enabled: true
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/resourcesmanager
+    username: liquibase
+    password: liquibase
+    driver-class-name: org.postgresql.Driver
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 3
+      linger-ms: 1
+      buffer-memory: 33554432
+
+    consumer:
+      group-id: resources-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+logging:
+  level:
+    liquibase: INFO
+    liquibase.executor: DEBUG
+    liquibase.changelog: DEBUG
+    liquibase.database: DEBUG
