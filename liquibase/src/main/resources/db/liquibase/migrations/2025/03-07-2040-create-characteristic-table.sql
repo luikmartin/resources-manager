@@ -1,5 +1,5 @@
 --liquibase formatted sql
---changeset martinluik:03-07-2040-create-characteristic-table
+--changeset martin.luik:03-07-2040-create-characteristic-table
 CREATE TABLE characteristic
 (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),

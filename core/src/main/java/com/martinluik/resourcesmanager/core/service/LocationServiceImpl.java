@@ -36,7 +36,10 @@ public class LocationServiceImpl implements LocationService {
 
   @Transactional
   public LocationDto updateLocation(UUID id, LocationDto dto) {
-    if (!locationRepository.existsById(id)) return null;
+    if (!locationRepository.existsById(id)) {
+      return null;
+    }
+
     var location = locationMapper.toEntity(dto);
     location.setId(id);
     location = locationRepository.save(location);

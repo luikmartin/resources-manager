@@ -2,6 +2,7 @@ package com.martinluik.resourcesmanager.rest;
 
 import com.martinluik.resourcesmanager.common.dto.LocationDto;
 import com.martinluik.resourcesmanager.common.service.LocationService;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -18,37 +19,45 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
-@RequestMapping("api/locations")
+@RequestMapping(LocationController.API_URL)
 @RequiredArgsConstructor
 public class LocationController {
+
+  public static final String API_URL = "api/locations";
 
   private final LocationService locationService;
 
   @GetMapping
   public List<LocationDto> getAll() {
+    log.info("GET request received to retrieve all locations");
     return locationService.getAllLocations();
   }
 
   @GetMapping("{id}")
   public ResponseEntity<LocationDto> getById(@PathVariable UUID id) {
+    log.info("GET request received to retrieve location with ID: {}", id);
     var dto = locationService.getLocation(id);
     return dto != null ? ResponseEntity.ok(dto) : ResponseEntity.notFound().build();
   }
 
   @PostMapping
-  public ResponseEntity<LocationDto> create(@RequestBody LocationDto dto) {
+  public ResponseEntity<LocationDto> create(@Valid @RequestBody LocationDto dto) {
+    log.info("POST request received to create new location");
     var created = locationService.createLocation(dto);
-    return ResponseEntity.ok(created);
+    return ResponseEntity.created(null).body(created);
   }
 
   @PutMapping("{id}")
-  public ResponseEntity<LocationDto> update(@PathVariable UUID id, @RequestBody LocationDto dto) {
+  public ResponseEntity<LocationDto> update(
+      @PathVariable UUID id, @Valid @RequestBody LocationDto dto) {
+    log.info("PUT request received to update location with ID: {}", id);
     var updated = locationService.updateLocation(id, dto);
     return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
   }
 
   @DeleteMapping("{id}")
   public ResponseEntity<Void> delete(@PathVariable UUID id) {
+    log.info("DELETE request received to delete location with ID: {}", id);
     locationService.deleteLocation(id);
     return ResponseEntity.noContent().build();
   }

@@ -2,6 +2,7 @@ package com.martinluik.resourcesmanager.rest;
 
 import com.martinluik.resourcesmanager.common.dto.CharacteristicDto;
 import com.martinluik.resourcesmanager.common.service.CharacteristicService;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -18,44 +19,55 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
-@RequestMapping("api/characteristics")
+@RequestMapping(CharacteristicController.API_URL)
 @RequiredArgsConstructor
 public class CharacteristicController {
+
+  public static final String API_URL = "api/characteristics";
 
   private final CharacteristicService characteristicService;
 
   @GetMapping
   public List<CharacteristicDto> getAll() {
+    log.info("GET request received to retrieve all characteristics");
     return characteristicService.getAllCharacteristics();
   }
 
   @GetMapping("{id}")
   public ResponseEntity<CharacteristicDto> getById(@PathVariable UUID id) {
+    log.info("GET request received to retrieve characteristic with ID: {}", id);
     var dto = characteristicService.getCharacteristic(id);
     return dto != null ? ResponseEntity.ok(dto) : ResponseEntity.notFound().build();
   }
 
   @GetMapping("resource/{resourceId}")
   public List<CharacteristicDto> getByResourceId(@PathVariable UUID resourceId) {
+    log.info(
+        "GET request received to retrieve characteristics for resource with ID: {}", resourceId);
     return characteristicService.getCharacteristicsByResourceId(resourceId);
   }
 
   @PostMapping("resource/{resourceId}")
   public ResponseEntity<CharacteristicDto> create(
-      @PathVariable UUID resourceId, @RequestBody CharacteristicDto dto) {
+      @PathVariable UUID resourceId, @Valid @RequestBody CharacteristicDto dto) {
+    log.info("POST request received to create characteristic for resource with ID: {}", resourceId);
     var created = characteristicService.createCharacteristic(dto, resourceId);
-    return created != null ? ResponseEntity.ok(created) : ResponseEntity.badRequest().build();
+    return created != null
+        ? ResponseEntity.created(null).body(created)
+        : ResponseEntity.badRequest().build();
   }
 
   @PutMapping("{id}")
   public ResponseEntity<CharacteristicDto> update(
-      @PathVariable UUID id, @RequestBody CharacteristicDto dto) {
+      @PathVariable UUID id, @Valid @RequestBody CharacteristicDto dto) {
+    log.info("PUT request received to update characteristic with ID: {}", id);
     var updated = characteristicService.updateCharacteristic(id, dto);
     return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
   }
 
   @DeleteMapping("{id}")
   public ResponseEntity<Void> delete(@PathVariable UUID id) {
+    log.info("DELETE request received to delete characteristic with ID: {}", id);
     characteristicService.deleteCharacteristic(id);
     return ResponseEntity.noContent().build();
   }

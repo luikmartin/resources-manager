@@ -1,5 +1,6 @@
 package com.martinluik.resourcesmanager.core.domain;
 
+import com.martinluik.resourcesmanager.common.constants.ValidationMessages;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -24,22 +25,22 @@ public class Location {
   @Id @GeneratedValue private UUID id;
 
   @Column(nullable = false)
-  @NotBlank(message = "Street address is required")
-  @Size(max = 255, message = "Street address must be less than 255 characters")
+  @NotBlank(message = ValidationMessages.STREET_ADDRESS_REQUIRED)
+  @Size(max = 255, message = ValidationMessages.STREET_ADDRESS_MAX_SIZE)
   private String streetAddress;
 
   @Column(nullable = false)
-  @NotBlank(message = "City is required")
-  @Size(max = 100, message = "City must be less than 100 characters")
+  @NotBlank(message = ValidationMessages.CITY_REQUIRED)
+  @Size(max = 100, message = ValidationMessages.CITY_MAX_SIZE)
   private String city;
 
   @Column(nullable = false)
-  @NotBlank(message = "Postal code is required")
-  @Size(max = 20, message = "Postal code must be less than 20 characters")
+  @NotBlank(message = ValidationMessages.POSTAL_CODE_REQUIRED)
+  @Size(max = 20, message = ValidationMessages.POSTAL_CODE_MAX_SIZE)
   private String postalCode;
 
   @Column(nullable = false, length = 2)
-  @NotBlank(message = "Country code is required")
-  @Size(min = 2, max = 2, message = "Country code must be exactly 2 characters")
+  @NotBlank(message = ValidationMessages.COUNTRY_CODE_REQUIRED)
+  @Size(min = 2, max = 2, message = ValidationMessages.COUNTRY_CODE_EXACT_SIZE)
   private String countryCode;
 }

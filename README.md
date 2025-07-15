@@ -21,20 +21,25 @@ cd docker
 ./build-and-run.sh
 ```
 
+The application will log all available URLs when it starts up, making it easy to access the API and documentation.
+
 ## Access URLs
 
-- **API Base URL**: http://localhost:8080
-- **Swagger UI**: http://localhost:8080/swagger-ui.html
-- **Health Check**: http://localhost:8080/actuator/health
+- **API Base URL**: http://localhost:8061/resources-manager
+- **Swagger UI**: http://localhost:8061/resources-manager/swagger-ui.html
+- **OpenAPI JSON**: http://localhost:8061/resources-manager/v3/api-docs
+- **OpenAPI YAML**: http://localhost:8061/resources-manager/v3/api-docs.yaml
+- **Health Check**: http://localhost:8061/resources-manager/actuator/health
 - **Database**: localhost:5432 (PostgreSQL)
 - **Kafka**: localhost:9092
+- **Kafka UI**: http://localhost:8062
 
 ## API Endpoints
 
-- `GET/POST /api/resources` - Resource management (with Kafka notifications)
-- `POST /api/resources/{id}/location` - Update location
-- `POST/DELETE /api/resources/{id}/characteristics` - Manage characteristics
-- `POST /api/resources/bulk-export` - Export all resources to Kafka
+- `GET/POST /resources-manager/api/resources` - Resource management (with Kafka notifications)
+- `POST /resources-manager/api/resources/{id}/location` - Update location
+- `POST/DELETE /resources-manager/api/resources/{id}/characteristics` - Manage characteristics
+- `POST /resources-manager/api/resources/bulk-export` - Export all resources to Kafka
 
 ## Project Structure
 
@@ -43,3 +48,5 @@ cd docker
 - `core/` - Domain entities and services
 - `liquibase/` - Database migrations
 - `docker/` - Container configuration
+
+Kafka UI https://github.com/provectus/kafka-ui

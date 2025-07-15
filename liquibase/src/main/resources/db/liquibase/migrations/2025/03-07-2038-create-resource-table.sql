@@ -1,5 +1,5 @@
 --liquibase formatted sql
---changeset martinluik:03-07-2038-create-resource-table
+--changeset martin.luik:03-07-2038-create-resource-table
 CREATE TABLE resource
 (
     id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -12,7 +12,7 @@ class LocationMapperTest {
   private final LocationMapper mapper = new LocationMapper();
 
   @Test
-  void toDto_location_mapsCorrectly() {
+  void toDto_validLocation_returnsCorrectlyMappedDto() {
     // Given
     Location location =
         Location.builder()
@@ -36,7 +36,7 @@ class LocationMapperTest {
   }
 
   @Test
-  void toEntity_locationDto_mapsCorrectly() {
+  void toEntity_validLocationDto_returnsCorrectlyMappedEntity() {
     // Given
     LocationDto dto =
         LocationDto.builder()

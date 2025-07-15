@@ -1,14 +1,14 @@
 package com.martinluik.resourcesmanager.common.dto;
 
+import com.martinluik.resourcesmanager.common.constants.ValidationMessages;
 import com.martinluik.resourcesmanager.common.enums.CharacteristicType;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.validator.constraints.Length;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 @Data
 @Builder
@@ -16,13 +16,17 @@ import org.jetbrains.annotations.Nullable;
 @AllArgsConstructor
 public class CharacteristicDto {
 
-  @Nullable private UUID id;
-  @Nullable private UUID resourceId;
+  private UUID id;
+  private UUID resourceId;
 
-  @NotNull
-  @Length(max = 5)
+  @NotNull(message = ValidationMessages.CHARACTERISTIC_CODE_REQUIRED)
+  @Size(max = 5, message = ValidationMessages.CHARACTERISTIC_CODE_MAX_SIZE)
   private String code;
 
-  @NotNull private CharacteristicType type;
-  @NotNull private String value;
+  @NotNull(message = ValidationMessages.CHARACTERISTIC_TYPE_REQUIRED)
+  private CharacteristicType type;
+  
+  @NotNull(message = ValidationMessages.CHARACTERISTIC_VALUE_REQUIRED)
+  @Size(min = 1, max = 1000, message = ValidationMessages.CHARACTERISTIC_VALUE_SIZE_RANGE)
+  private String value;
 }

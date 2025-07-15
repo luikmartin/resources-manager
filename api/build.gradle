@@ -12,9 +12,8 @@ dependencies {
             libs.springBootStarterActuator,
             libs.springBootStarterDataJpa,
             libs.springBootStarterKafka,
-            libs.postgresql)
-
-    implementation(libs.liquibaseCore,
+            libs.postgresql,
+            libs.liquibaseCore,
             libs.springdocOpenapi)
 
     testImplementation(libs.springBootStarterTest,

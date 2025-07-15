@@ -14,7 +14,7 @@ class CharacteristicsMapperTest {
   private final CharacteristicsMapper mapper = new CharacteristicsMapper();
 
   @Test
-  void toDto_characteristic_mapsCorrectly() {
+  void toDto_validCharacteristic_returnsCorrectlyMappedDto() {
     // Given
     Characteristic characteristic =
         Characteristic.builder()
@@ -38,7 +38,7 @@ class CharacteristicsMapperTest {
   }
 
   @Test
-  void toEntity_characteristicDto_mapsCorrectly() {
+  void toEntity_validCharacteristicDto_returnsCorrectlyMappedEntity() {
     // Given
     CharacteristicDto dto =
         CharacteristicDto.builder()

@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://db:5432/resourcesmanager
+    username: liquibase
+    password: liquibase
+
+  kafka:
+    bootstrap-servers: kafka:9092
+
+logging:
+  level:
+    org.apache.kafka: INFO
+    org.springframework.kafka: INFO
+    liquibase: INFO

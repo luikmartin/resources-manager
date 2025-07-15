@@ -32,7 +32,9 @@ public class CharacteristicServiceImpl implements CharacteristicService {
   @Transactional
   public CharacteristicDto createCharacteristic(CharacteristicDto dto, UUID resourceId) {
     var resource = resourceRepository.findById(resourceId).orElse(null);
-    if (resource == null) return null;
+    if (resource == null) {
+      return null;
+    }
 
     var characteristic = characteristicsMapper.toEntity(dto);
     characteristic.setResource(resource);
@@ -43,7 +45,9 @@ public class CharacteristicServiceImpl implements CharacteristicService {
   @Transactional
   public CharacteristicDto updateCharacteristic(UUID id, CharacteristicDto dto) {
     var existingCharacteristic = characteristicRepository.findById(id).orElse(null);
-    if (existingCharacteristic == null) return null;
+    if (existingCharacteristic == null) {
+      return null;
+    }
 
     var characteristic = characteristicsMapper.toEntity(dto);
     characteristic.setId(id);

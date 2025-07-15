@@ -19,7 +19,7 @@ class ResourceMapperTest {
       new ResourceMapper(new LocationMapper(), new CharacteristicsMapper());
 
   @Test
-  void toDto_resource_mapsCorrectly() {
+  void toDto_validResource_returnsCorrectlyMappedDto() {
     // Given
     Resource resource =
         Resource.builder()
@@ -43,7 +43,7 @@ class ResourceMapperTest {
   }
 
   @Test
-  void toEntity_resourceDto_mapsCorrectly() {
+  void toEntity_validResourceDto_returnsCorrectlyMappedEntity() {
     // Given
     ResourceDto dto =
         ResourceDto.builder()

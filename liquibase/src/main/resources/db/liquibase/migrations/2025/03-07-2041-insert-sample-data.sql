@@ -1,5 +1,5 @@
 --liquibase formatted sql
---changeset martinluik:03-07-2041-insert-sample-data
+--changeset martin.luik:03-07-2041-insert-sample-data
 
 -- Resource 1 (Estonia)
 INSERT INTO location (id, street_address, city, postal_code, country_code)
