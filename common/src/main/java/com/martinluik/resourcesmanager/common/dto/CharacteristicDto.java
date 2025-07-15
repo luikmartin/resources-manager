@@ -25,7 +25,7 @@ public class CharacteristicDto {
 
   @NotNull(message = ValidationMessages.CHARACTERISTIC_TYPE_REQUIRED)
   private CharacteristicType type;
-  
+
   @NotNull(message = ValidationMessages.CHARACTERISTIC_VALUE_REQUIRED)
   @Size(min = 1, max = 1000, message = ValidationMessages.CHARACTERISTIC_VALUE_SIZE_RANGE)
   private String value;

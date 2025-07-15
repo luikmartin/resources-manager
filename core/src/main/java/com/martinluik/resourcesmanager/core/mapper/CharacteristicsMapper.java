@@ -8,10 +8,6 @@ import org.springframework.stereotype.Component;
 public class CharacteristicsMapper {
 
   public CharacteristicDto toDto(Characteristic entity) {
-    if (entity == null) {
-      return null;
-    }
-
     return CharacteristicDto.builder()
         .id(entity.getId())
         .resourceId(entity.getResource() != null ? entity.getResource().getId() : null)
@@ -22,10 +18,6 @@ public class CharacteristicsMapper {
   }
 
   public Characteristic toEntity(CharacteristicDto dto) {
-    if (dto == null) {
-      return null;
-    }
-
     return Characteristic.builder()
         .id(dto.getId())
         .code(dto.getCode())

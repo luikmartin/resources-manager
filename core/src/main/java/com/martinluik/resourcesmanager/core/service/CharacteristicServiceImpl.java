@@ -1,6 +1,7 @@
 package com.martinluik.resourcesmanager.core.service;
 
 import com.martinluik.resourcesmanager.common.dto.CharacteristicDto;
+import com.martinluik.resourcesmanager.common.exception.CharacteristicNotFoundException;
 import com.martinluik.resourcesmanager.common.service.CharacteristicService;
 import com.martinluik.resourcesmanager.core.mapper.CharacteristicsMapper;
 import com.martinluik.resourcesmanager.core.repository.CharacteristicRepository;
@@ -26,7 +27,10 @@ public class CharacteristicServiceImpl implements CharacteristicService {
 
   @Transactional(readOnly = true)
   public CharacteristicDto getCharacteristic(UUID id) {
-    return characteristicRepository.findById(id).map(characteristicsMapper::toDto).orElse(null);
+    return characteristicRepository
+        .findById(id)
+        .map(characteristicsMapper::toDto)
+        .orElseThrow(() -> new CharacteristicNotFoundException(id));
   }
 
   @Transactional
@@ -43,14 +47,17 @@ public class CharacteristicServiceImpl implements CharacteristicService {
   }
 
   @Transactional
-  public CharacteristicDto updateCharacteristic(UUID id, CharacteristicDto dto) {
-    var existingCharacteristic = characteristicRepository.findById(id).orElse(null);
-    if (existingCharacteristic == null) {
-      return null;
+  public CharacteristicDto updateCharacteristic(CharacteristicDto dto) {
+    if (dto.getId() == null) {
+      throw new IllegalArgumentException("Characteristic ID cannot be null for update");
     }
 
+    var existingCharacteristic =
+        characteristicRepository
+            .findById(dto.getId())
+            .orElseThrow(() -> new CharacteristicNotFoundException(dto.getId()));
+
     var characteristic = characteristicsMapper.toEntity(dto);
-    characteristic.setId(id);
     characteristic.setResource(existingCharacteristic.getResource());
     characteristic = characteristicRepository.save(characteristic);
     return characteristicsMapper.toDto(characteristic);
@@ -58,9 +65,10 @@ public class CharacteristicServiceImpl implements CharacteristicService {
 
   @Transactional
   public void deleteCharacteristic(UUID id) {
-    if (characteristicRepository.existsById(id)) {
-      characteristicRepository.deleteById(id);
+    if (!characteristicRepository.existsById(id)) {
+      throw new CharacteristicNotFoundException(id);
     }
+    characteristicRepository.deleteById(id);
   }
 
   @Transactional(readOnly = true)

@@ -8,17 +8,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class KafkaConsumerServiceImpl {
 
-  private final ObjectMapper objectMapper;
+  private final ObjectMapper mapper;
 
   @KafkaListener(topics = "resource-updates", groupId = "resources-group")
   public void listenResourceUpdates(String message) {
     try {
-      var resourceDto = objectMapper.readValue(message, ResourceDto.class);
+      var resourceDto = mapper.readValue(message, ResourceDto.class);
       log.info("Received resource update for resource ID: {}", resourceDto.getId());
       // TODO - Add business logic here to process the resource update
     } catch (JsonProcessingException e) {
@@ -29,7 +29,7 @@ public class KafkaConsumerServiceImpl {
   @KafkaListener(topics = "bulk-export", groupId = "resources-group")
   public void listenBulkExport(String message) {
     try {
-      var resourceDto = objectMapper.readValue(message, ResourceDto.class);
+      var resourceDto = mapper.readValue(message, ResourceDto.class);
       log.info("Received bulk export resource ID: {}", resourceDto.getId());
       // TODO - Add business logic here to process the bulk export resource
     } catch (JsonProcessingException e) {

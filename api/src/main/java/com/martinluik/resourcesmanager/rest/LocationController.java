@@ -1,7 +1,9 @@
 package com.martinluik.resourcesmanager.rest;
 
 import com.martinluik.resourcesmanager.common.dto.LocationDto;
+import com.martinluik.resourcesmanager.common.dto.ResourceDto;
 import com.martinluik.resourcesmanager.common.service.LocationService;
+import com.martinluik.resourcesmanager.common.service.ResourceService;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -26,6 +28,7 @@ public class LocationController {
   public static final String API_URL = "api/locations";
 
   private final LocationService locationService;
+  private final ResourceService resourceService;
 
   @GetMapping
   public List<LocationDto> getAll() {
@@ -47,11 +50,10 @@ public class LocationController {
     return ResponseEntity.created(null).body(created);
   }
 
-  @PutMapping("{id}")
-  public ResponseEntity<LocationDto> update(
-      @PathVariable UUID id, @Valid @RequestBody LocationDto dto) {
-    log.info("PUT request received to update location with ID: {}", id);
-    var updated = locationService.updateLocation(id, dto);
+  @PutMapping
+  public ResponseEntity<LocationDto> update(@Valid @RequestBody LocationDto dto) {
+    log.info("PUT request received to update location with ID: {}", dto.getId());
+    var updated = locationService.updateLocation(dto);
     return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
   }
 
@@ -60,5 +62,13 @@ public class LocationController {
     log.info("DELETE request received to delete location with ID: {}", id);
     locationService.deleteLocation(id);
     return ResponseEntity.noContent().build();
+  }
+
+  @PutMapping("resource/{resourceId}")
+  public ResponseEntity<ResourceDto> updateResourceLocation(
+      @PathVariable UUID resourceId, @Valid @RequestBody LocationDto locationDto) {
+    log.info("PUT request received to update location for resource with ID: {}", resourceId);
+    var updated = resourceService.updateResourceLocation(resourceId, locationDto);
+    return ResponseEntity.ok(updated);
   }
 }

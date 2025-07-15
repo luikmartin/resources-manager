@@ -57,11 +57,10 @@ public class CharacteristicController {
         : ResponseEntity.badRequest().build();
   }
 
-  @PutMapping("{id}")
-  public ResponseEntity<CharacteristicDto> update(
-      @PathVariable UUID id, @Valid @RequestBody CharacteristicDto dto) {
-    log.info("PUT request received to update characteristic with ID: {}", id);
-    var updated = characteristicService.updateCharacteristic(id, dto);
+  @PutMapping
+  public ResponseEntity<CharacteristicDto> update(@Valid @RequestBody CharacteristicDto dto) {
+    log.info("PUT request received to update characteristic with ID: {}", dto.getId());
+    var updated = characteristicService.updateCharacteristic(dto);
     return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
   }
 

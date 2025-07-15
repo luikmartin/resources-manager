@@ -1,11 +1,28 @@
+services:
+  database:
+    port: 5432
+  kafka:
+    port: 9092
+  kafka-ui:
+    port: 8062
+
+server:
+  port: 8061
+  servlet:
+    context-path: /resources-manager
+
 spring:
   datasource:
-    url: jdbc:postgresql://db:5432/resourcesmanager
+    url: jdbc:postgresql://db:${services.database.port}/resourcesmanager
     username: liquibase
     password: liquibase
 
   kafka:
-    bootstrap-servers: kafka:9092
+    bootstrap-servers: kafka:${services.kafka.port}
+    admin:
+      auto-create: true
+      fatal-if-broker-not-available: false
+      operation-timeout: 30000
 
 logging:
   level:

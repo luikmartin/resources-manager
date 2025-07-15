@@ -4,7 +4,6 @@ import com.martinluik.resourcesmanager.common.dto.CharacteristicDto;
 import com.martinluik.resourcesmanager.common.dto.ResourceDto;
 import com.martinluik.resourcesmanager.core.domain.Resource;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -16,10 +15,6 @@ public class ResourceMapper {
   private final CharacteristicsMapper characteristicsMapper;
 
   public ResourceDto toDto(Resource resource) {
-    if (resource == null) {
-      return null;
-    }
-
     List<CharacteristicDto> characteristics = null;
     if (resource.getCharacteristics() != null) {
       characteristics =
@@ -36,13 +31,11 @@ public class ResourceMapper {
   }
 
   public Resource toEntity(ResourceDto dto) {
-    return dto == null
-        ? null
-        : Resource.builder()
-            .id(dto.getId())
-            .type(dto.getType())
-            .countryCode(dto.getCountryCode())
-            .location(locationMapper.toEntity(dto.getLocation()))
-            .build();
+    return Resource.builder()
+        .id(dto.getId())
+        .type(dto.getType())
+        .countryCode(dto.getCountryCode())
+        .location(locationMapper.toEntity(dto.getLocation()))
+        .build();
   }
 }

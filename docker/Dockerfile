@@ -35,10 +35,10 @@ RUN mkdir -p /app/logs && chown -R spring:spring /app
 
 USER spring
 
-EXPOSE 8080
+EXPOSE 8061
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:8080/actuator/health || exit 1
+  CMD curl -f http://localhost:8061/actuator/health || exit 1
 
 ENV JAVA_OPTS="-Xmx512m -Xms256m -XX:+UseG1GC -XX:+UseStringDeduplication"
 

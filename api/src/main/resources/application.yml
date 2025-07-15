@@ -1,3 +1,11 @@
+services:
+  database:
+    port: 5432
+  kafka:
+    port: 9092
+  kafka-ui:
+    port: 8062
+
 server:
   port: 8061
   servlet:
@@ -16,13 +24,13 @@ spring:
     enabled: true
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/resourcesmanager
+    url: jdbc:postgresql://localhost:${services.database.port}/resourcesmanager
     username: liquibase
     password: liquibase
     driver-class-name: org.postgresql.Driver
 
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: localhost:${services.kafka.port}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer

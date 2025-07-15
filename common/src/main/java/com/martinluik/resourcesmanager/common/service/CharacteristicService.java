@@ -12,7 +12,7 @@ public interface CharacteristicService {
 
   CharacteristicDto createCharacteristic(CharacteristicDto dto, UUID resourceId);
 
-  CharacteristicDto updateCharacteristic(UUID id, CharacteristicDto dto);
+  CharacteristicDto updateCharacteristic(CharacteristicDto dto);
 
   void deleteCharacteristic(UUID id);
 

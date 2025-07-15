@@ -20,18 +20,18 @@ import jakarta.validation.constraints.Size;
 public class ResourceDto {
 
   private UUID id;
-  
+
   @NotNull(message = ValidationMessages.RESOURCE_TYPE_REQUIRED)
   private ResourceType type;
-  
+
   @NotNull(message = ValidationMessages.COUNTRY_CODE_REQUIRED)
   @Pattern(regexp = "^[A-Z]{2}$", message = ValidationMessages.COUNTRY_CODE_ISO_PATTERN)
   private String countryCode;
-  
+
   @NotNull(message = ValidationMessages.LOCATION_REQUIRED)
   @Valid
   private LocationDto location;
-  
+
   @NotNull(message = ValidationMessages.CHARACTERISTICS_REQUIRED)
   @Size(min = 1, message = ValidationMessages.CHARACTERISTICS_MIN_SIZE)
   @Valid
