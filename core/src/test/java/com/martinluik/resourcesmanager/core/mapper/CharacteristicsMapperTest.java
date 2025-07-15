@@ -1,6 +1,8 @@
 package com.martinluik.resourcesmanager.core.mapper;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.martinluik.resourcesmanager.common.dto.CharacteristicDto;
 import com.martinluik.resourcesmanager.common.enums.CharacteristicType;

@@ -1,6 +1,7 @@
 package com.martinluik.resourcesmanager.core.mapper;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.martinluik.resourcesmanager.common.dto.LocationDto;
 import com.martinluik.resourcesmanager.core.domain.Location;

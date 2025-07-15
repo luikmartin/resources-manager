@@ -20,4 +20,9 @@ dependencies {
     annotationProcessor libs.lombok
 
     testImplementation libs.springBootStarterTest
+    
+    // Add explicit JUnit dependencies to resolve version conflicts
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine'
+    testImplementation 'org.junit.platform:junit-platform-launcher'
 } 

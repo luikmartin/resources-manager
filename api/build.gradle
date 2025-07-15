@@ -19,7 +19,9 @@ dependencies {
     testImplementation(libs.springBootStarterTest,
             libs.testcontainersPostgresql,
             libs.testcontainersJunitJupiter,
-            libs.testcontainersKafka)
+            libs.testcontainersKafka,
+            project(':common'),
+            project(':core'))
 }
 
 tasks.named('test') {

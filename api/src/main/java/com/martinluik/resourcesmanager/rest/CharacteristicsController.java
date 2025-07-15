@@ -1,6 +1,7 @@
 package com.martinluik.resourcesmanager.rest;
 
 import com.martinluik.resourcesmanager.common.dto.CharacteristicDto;
+import com.martinluik.resourcesmanager.common.exception.CharacteristicNotFoundException;
 import com.martinluik.resourcesmanager.common.service.CharacteristicService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -19,9 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
-@RequestMapping(CharacteristicController.API_URL)
+@RequestMapping(CharacteristicsController.API_URL)
 @RequiredArgsConstructor
-public class CharacteristicController {
+public class CharacteristicsController {
 
   public static final String API_URL = "api/characteristics";
 
@@ -60,8 +61,16 @@ public class CharacteristicController {
   @PutMapping
   public ResponseEntity<CharacteristicDto> update(@Valid @RequestBody CharacteristicDto dto) {
     log.info("PUT request received to update characteristic with ID: {}", dto.getId());
-    var updated = characteristicService.updateCharacteristic(dto);
-    return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
+    try {
+      var updated = characteristicService.updateCharacteristic(dto);
+      return ResponseEntity.ok(updated);
+    } catch (IllegalArgumentException e) {
+      log.warn("Invalid argument for characteristic update: {}", e.getMessage());
+      return ResponseEntity.badRequest().build();
+    } catch (CharacteristicNotFoundException e) {
+      log.warn("Characteristic not found for update: {}", e.getMessage());
+      return ResponseEntity.notFound().build();
+    }
   }
 
   @DeleteMapping("{id}")
