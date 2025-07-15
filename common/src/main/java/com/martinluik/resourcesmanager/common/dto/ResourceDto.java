@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import org.jetbrains.annotations.Nullable;
 
 @Data
 @Builder
@@ -19,7 +20,7 @@ import jakarta.validation.constraints.Size;
 @AllArgsConstructor
 public class ResourceDto {
 
-  private UUID id;
+  @Nullable private UUID id;
 
   @NotNull(message = ValidationMessages.RESOURCE_TYPE_REQUIRED)
   private ResourceType type;

@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.jetbrains.annotations.Nullable;
 
 @Data
 @Builder
@@ -16,7 +17,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class LocationDto {
 
-  private UUID id;
+  @Nullable private UUID id;
 
   @NotNull(message = ValidationMessages.STREET_ADDRESS_REQUIRED)
   @Size(min = 1, max = 255, message = ValidationMessages.STREET_ADDRESS_SIZE_RANGE)

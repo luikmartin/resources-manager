@@ -37,7 +37,7 @@ public class StartupConfig {
     log.info("   📄 OpenAPI YAML: {}/v3/api-docs.yaml", baseUrl);
     log.info("   ❤️ Health Check: {}/actuator/health", baseUrl);
     log.info("   🗄️ Database: http://localhost:{}", dbPort);
-    log.info("   📊 Kafka: http://localhost:{}\n", kafkaPort);
-    log.info("   📊 Kafka UI: http://localhost:{}", kafkaUiPort);
+    log.info("   📊 Kafka: http://localhost:{}", kafkaPort);
+    log.info("   📊 Kafka UI: http://localhost:{}\n", kafkaUiPort);
   }
 }

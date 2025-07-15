@@ -3,7 +3,6 @@ package com.martinluik.resourcesmanager.config;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.servers.Server;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,14 +29,7 @@ public class OpenApiConfig {
                 .description(
                     "A comprehensive API for managing resources, locations, and characteristics")
                 .version("1.0.0")
-                .contact(new Contact().name("Martin Luik").email("martin.luik@example.com"))
-                .license(
-                    new License().name("MIT License").url("https://opensource.org/licenses/MIT")))
-        .servers(
-            List.of(
-                new Server().url(baseUrl).description("Current Server"),
-                new Server()
-                    .url("https://your-production-domain.com/resources-manager")
-                    .description("Production Server")));
+                .contact(new Contact().name("Martin Luik").email("martin.luik@example.com")))
+        .servers(List.of(new Server().url(baseUrl).description("Current Server")));
   }
 }

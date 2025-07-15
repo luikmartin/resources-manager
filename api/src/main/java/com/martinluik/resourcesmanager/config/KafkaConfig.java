@@ -20,6 +20,9 @@ import org.springframework.kafka.core.ProducerFactory;
 @Configuration
 public class KafkaConfig {
 
+  public static final String RESOURCES_UPDATES_TOPIC = "resource-updates";
+  public static final String BULK_EXPORT_TOPIC = "bulk-export";
+
   @Value("${spring.kafka.bootstrap-servers}")
   private String bootstrapServers;
 
@@ -28,7 +31,7 @@ public class KafkaConfig {
 
   @Bean
   public NewTopic resourceUpdatesTopic() {
-    return TopicBuilder.name("resource-updates")
+    return TopicBuilder.name(RESOURCES_UPDATES_TOPIC)
         .partitions(3)
         .replicas(1)
         .configs(
@@ -40,7 +43,7 @@ public class KafkaConfig {
 
   @Bean
   public NewTopic bulkExportTopic() {
-    return TopicBuilder.name("bulk-export")
+    return TopicBuilder.name(BULK_EXPORT_TOPIC)
         .partitions(3)
         .replicas(1)
         .configs(

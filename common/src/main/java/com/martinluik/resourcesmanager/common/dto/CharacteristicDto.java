@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.jetbrains.annotations.Nullable;
 
 @Data
 @Builder
@@ -16,8 +17,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CharacteristicDto {
 
-  private UUID id;
-  private UUID resourceId;
+  @Nullable private UUID id;
+  @Nullable private UUID resourceId;
 
   @NotNull(message = ValidationMessages.CHARACTERISTIC_CODE_REQUIRED)
   @Size(max = 5, message = ValidationMessages.CHARACTERISTIC_CODE_MAX_SIZE)
