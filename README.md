@@ -12,7 +12,7 @@ Spring Boot application for managing resources (metering points and connection p
 - **Build**: Gradle
 - **Containerization**: Docker & Docker Compose
 - **API Documentation**: SpringDoc OpenAPI (Swagger)
-- **Messaging**: Apache Kafka
+- **Messaging**: Apache Kafka + Kafka UI (https://github.com/provectus/kafka-ui)
 
 ## Quick Start
 
@@ -34,13 +34,6 @@ The application will log all available URLs when it starts up, making it easy to
 - **Kafka**: localhost:9092
 - **Kafka UI**: http://localhost:8062
 
-## API Endpoints
-
-- `GET/POST /resources-manager/api/resources` - Resource management (with Kafka notifications)
-- `POST /resources-manager/api/resources/{id}/location` - Update location
-- `POST/DELETE /resources-manager/api/resources/{id}/characteristics` - Manage characteristics
-- `POST /resources-manager/api/resources/bulk-export` - Export all resources to Kafka
-
 ## Project Structure
 
 - `api/` - Spring Boot application
@@ -48,5 +41,3 @@ The application will log all available URLs when it starts up, making it easy to
 - `core/` - Domain entities and services
 - `liquibase/` - Database migrations
 - `docker/` - Container configuration
-
-Kafka UI https://github.com/provectus/kafka-ui
