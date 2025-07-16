@@ -5,15 +5,19 @@ import com.martinluik.resourcesmanager.common.dto.ResourceDto;
 import com.martinluik.resourcesmanager.common.exception.ResourceNotFoundException;
 import com.martinluik.resourcesmanager.common.service.KafkaService;
 import com.martinluik.resourcesmanager.common.service.ResourceService;
+import com.martinluik.resourcesmanager.core.domain.Characteristic;
 import com.martinluik.resourcesmanager.core.mapper.LocationMapper;
 import com.martinluik.resourcesmanager.core.mapper.ResourceMapper;
+import com.martinluik.resourcesmanager.core.repository.CharacteristicRepository;
 import com.martinluik.resourcesmanager.core.repository.LocationRepository;
 import com.martinluik.resourcesmanager.core.repository.ResourceRepository;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +25,7 @@ public class ResourceServiceImpl implements ResourceService {
 
   private final ResourceRepository resourceRepository;
   private final LocationRepository locationRepository;
+  private final CharacteristicRepository characteristicRepository;
   private final ResourceMapper resourceMapper;
   private final LocationMapper locationMapper;
   private final KafkaService kafkaService;
@@ -34,15 +39,38 @@ public class ResourceServiceImpl implements ResourceService {
   @Override
   @Transactional(readOnly = true)
   public ResourceDto getResource(UUID id) {
-    var resource =
-        resourceRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException(id));
-    return resourceMapper.toDto(resource);
+    Assert.notNull(id, "Resource ID cannot be null");
+
+    return resourceRepository
+        .findById(id)
+        .map(resourceMapper::toDto)
+        .orElseThrow(() -> new ResourceNotFoundException(id));
   }
 
   @Override
   @Transactional
   public ResourceDto createResource(ResourceDto dto) {
+    Assert.notNull(dto, "Resource DTO cannot be null");
+
     var resource = resourceMapper.toEntity(dto);
+
+    if (dto.getCharacteristics() != null && !dto.getCharacteristics().isEmpty()) {
+      com.martinluik.resourcesmanager.core.domain.Resource finalResource = resource;
+      var characteristics =
+          dto.getCharacteristics().stream()
+              .map(
+                  characteristicDto -> {
+                    var characteristic = new Characteristic();
+                    characteristic.setCode(characteristicDto.getCode());
+                    characteristic.setType(characteristicDto.getType());
+                    characteristic.setValue(characteristicDto.getValue());
+                    characteristic.setResource(finalResource);
+                    return characteristic;
+                  })
+              .toList();
+      resource.setCharacteristics(characteristics);
+    }
+
     resource = resourceRepository.save(resource);
     var createdDto = resourceMapper.toDto(resource);
 
@@ -54,17 +82,49 @@ public class ResourceServiceImpl implements ResourceService {
   @Override
   @Transactional
   public ResourceDto updateResource(ResourceDto dto) {
-    if (dto.getId() == null) {
-      throw new IllegalArgumentException("Resource ID cannot be null for update");
+    Assert.notNull(dto, "Resource DTO cannot be null");
+    Assert.notNull(dto.getId(), "Resource ID cannot be null for update");
+
+    var existingResource =
+        resourceRepository
+            .findById(dto.getId())
+            .orElseThrow(() -> new ResourceNotFoundException(dto.getId()));
+
+    existingResource.setType(dto.getType());
+    existingResource.setCountryCode(dto.getCountryCode());
+
+    if (dto.getLocation() != null) {
+      var location = locationMapper.toEntity(dto.getLocation());
+      location.setId(existingResource.getLocation().getId());
+      existingResource.setLocation(location);
     }
 
-    if (!resourceRepository.existsById(dto.getId())) {
-      throw new ResourceNotFoundException(dto.getId());
+    if (dto.getCharacteristics() != null) {
+      characteristicRepository.deleteAll(existingResource.getCharacteristics());
+
+      if (!dto.getCharacteristics().isEmpty()) {
+        var characteristics =
+            dto.getCharacteristics().stream()
+                .map(
+                    characteristicDto -> {
+                      var characteristic = new Characteristic();
+                      characteristic.setCode(characteristicDto.getCode());
+                      characteristic.setType(characteristicDto.getType());
+                      characteristic.setValue(characteristicDto.getValue());
+                      characteristic.setResource(existingResource);
+                      return characteristic;
+                    })
+                .toList();
+
+        var savedCharacteristics = characteristicRepository.saveAll(characteristics);
+        existingResource.setCharacteristics(savedCharacteristics);
+      } else {
+        existingResource.setCharacteristics(new ArrayList<>());
+      }
     }
 
-    var resource = resourceMapper.toEntity(dto);
-    resource = resourceRepository.save(resource);
-    var updatedDto = resourceMapper.toDto(resource);
+    var updatedResource = resourceRepository.save(existingResource);
+    var updatedDto = resourceMapper.toDto(updatedResource);
 
     kafkaService.sendResourceUpdate(updatedDto);
 
@@ -74,15 +134,21 @@ public class ResourceServiceImpl implements ResourceService {
   @Override
   @Transactional
   public void deleteResource(UUID id) {
+    Assert.notNull(id, "Resource ID cannot be null");
+
     if (!resourceRepository.existsById(id)) {
       throw new ResourceNotFoundException(id);
     }
+
     resourceRepository.deleteById(id);
   }
 
   @Override
   @Transactional
   public ResourceDto updateResourceLocation(UUID resourceId, LocationDto locationDto) {
+    Assert.notNull(resourceId, "Resource ID cannot be null");
+    Assert.notNull(locationDto, "Location DTO cannot be null");
+
     var resource =
         resourceRepository
             .findById(resourceId)

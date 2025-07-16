@@ -5,6 +5,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -258,5 +260,219 @@ class ResourceControllerIntegrationTest extends BaseIntegrationTest {
 
     verify(kafkaTemplate, times(2))
         .send(eq(KafkaConfig.BULK_EXPORT_TOPIC), anyString(), anyString());
+  }
+
+  @Test
+  @DisplayName("Should retrieve all resources")
+  void getAllResources_ShouldReturnAllResources() throws Exception {
+    // Given
+    var characteristic =
+        CharacteristicDto.builder()
+            .code("TEST1")
+            .type(CharacteristicType.CONSUMPTION_TYPE)
+            .value("Fast Charging")
+            .build();
+
+    var location1 =
+        LocationDto.builder()
+            .streetAddress("123 First Street")
+            .city("First City")
+            .postalCode("11111")
+            .countryCode("EE")
+            .build();
+
+    var location2 =
+        LocationDto.builder()
+            .streetAddress("456 Second Street")
+            .city("Second City")
+            .postalCode("22222")
+            .countryCode("LV")
+            .build();
+
+    var resource1 =
+        ResourceDto.builder()
+            .type(ResourceType.CONNECTION_POINT)
+            .countryCode("EE")
+            .location(location1)
+            .characteristics(List.of(characteristic))
+            .build();
+
+    var resource2 =
+        ResourceDto.builder()
+            .type(ResourceType.METERING_POINT)
+            .countryCode("LV")
+            .location(location2)
+            .characteristics(List.of(characteristic))
+            .build();
+
+    var response1 =
+        mockMvc
+            .perform(
+                post(ResourcesController.API_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(resource1)))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    var response2 =
+        mockMvc
+            .perform(
+                post(ResourcesController.API_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(resource2)))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    var createdResource1 = objectMapper.readValue(response1, ResourceDto.class);
+    var createdResource2 = objectMapper.readValue(response2, ResourceDto.class);
+
+    // When & Then
+    mockMvc
+        .perform(get(ResourcesController.API_URL))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$").isArray())
+        .andExpect(jsonPath("$[0].id").value(createdResource1.getId().toString()))
+        .andExpect(jsonPath("$[0].type").value("CONNECTION_POINT"))
+        .andExpect(jsonPath("$[0].countryCode").value("EE"))
+        .andExpect(jsonPath("$[1].id").value(createdResource2.getId().toString()))
+        .andExpect(jsonPath("$[1].type").value("METERING_POINT"))
+        .andExpect(jsonPath("$[1].countryCode").value("LV"));
+  }
+
+  @Test
+  @DisplayName("Should retrieve resource by ID")
+  void getResourceById_ShouldReturnResource() throws Exception {
+    // Given
+    var characteristic =
+        CharacteristicDto.builder()
+            .code("TEST1")
+            .type(CharacteristicType.CONSUMPTION_TYPE)
+            .value("Fast Charging")
+            .build();
+
+    var location =
+        LocationDto.builder()
+            .streetAddress("123 Test Street")
+            .city("Test City")
+            .postalCode("12345")
+            .countryCode("EE")
+            .build();
+
+    var resourceDto =
+        ResourceDto.builder()
+            .type(ResourceType.CONNECTION_POINT)
+            .countryCode("EE")
+            .location(location)
+            .characteristics(List.of(characteristic))
+            .build();
+
+    var createResponse =
+        mockMvc
+            .perform(
+                post(ResourcesController.API_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(resourceDto)))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    var createdResource = objectMapper.readValue(createResponse, ResourceDto.class);
+
+    // When & Then
+      Assertions.assertNotNull(createdResource.getId());
+      mockMvc
+        .perform(get(ResourcesController.API_URL + "/" + createdResource.getId()))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.id").value(createdResource.getId().toString()))
+        .andExpect(jsonPath("$.type").value("CONNECTION_POINT"))
+        .andExpect(jsonPath("$.countryCode").value("EE"))
+        .andExpect(jsonPath("$.location.streetAddress").value("123 Test Street"))
+        .andExpect(jsonPath("$.location.city").value("Test City"))
+        .andExpect(jsonPath("$.characteristics[0].code").value("TEST1"));
+  }
+
+  @Test
+  @DisplayName("Should return 404 when resource not found by ID")
+  void getResourceById_ShouldReturn404WhenNotFound() throws Exception {
+    // Given
+    var nonExistentId = "550e8400-e29b-41d4-a716-446655440000";
+
+    // When & Then
+    mockMvc
+        .perform(get(ResourcesController.API_URL + "/" + nonExistentId))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  @DisplayName("Should delete resource by ID")
+  void deleteResourceById_ShouldDeleteResource() throws Exception {
+    // Given
+    var characteristic =
+        CharacteristicDto.builder()
+            .code("TEST1")
+            .type(CharacteristicType.CONSUMPTION_TYPE)
+            .value("Fast Charging")
+            .build();
+
+    var location =
+        LocationDto.builder()
+            .streetAddress("123 Delete Street")
+            .city("Delete City")
+            .postalCode("12345")
+            .countryCode("EE")
+            .build();
+
+    var resourceDto =
+        ResourceDto.builder()
+            .type(ResourceType.CONNECTION_POINT)
+            .countryCode("EE")
+            .location(location)
+            .characteristics(List.of(characteristic))
+            .build();
+
+    var createResponse =
+        mockMvc
+            .perform(
+                post(ResourcesController.API_URL)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(resourceDto)))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    var createdResource = objectMapper.readValue(createResponse, ResourceDto.class);
+
+      Assertions.assertNotNull(createdResource.getId());
+      var savedResource = resourceRepository.findById(createdResource.getId()).orElse(null);
+    assertThat(savedResource).isNotNull();
+
+    // When
+    mockMvc
+        .perform(delete(ResourcesController.API_URL + "/" + createdResource.getId()))
+        .andExpect(status().isNoContent());
+
+    // Then
+    var deletedResource = resourceRepository.findById(createdResource.getId()).orElse(null);
+    assertThat(deletedResource).isNull();
+  }
+
+  @Test
+  @DisplayName("Should return 404 when deleting non-existent resource")
+  void deleteResourceById_ShouldReturn404WhenNotFound() throws Exception {
+    // Given
+    var nonExistentId = "550e8400-e29b-41d4-a716-446655440000";
+
+    // When & Then
+    mockMvc
+        .perform(delete(ResourcesController.API_URL + "/" + nonExistentId))
+        .andExpect(status().isNotFound());
   }
 }

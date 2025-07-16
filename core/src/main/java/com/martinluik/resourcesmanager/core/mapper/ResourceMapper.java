@@ -16,6 +16,7 @@ public interface ResourceMapper {
   @Mapping(target = "location", source = "location")
   ResourceDto toDto(Resource resource);
 
-  @Mapping(target = "characteristics", ignore = true)
+  @Mapping(target = "characteristics", source = "characteristics")
+  @Mapping(target = "location", source = "location")
   Resource toEntity(ResourceDto dto);
 }

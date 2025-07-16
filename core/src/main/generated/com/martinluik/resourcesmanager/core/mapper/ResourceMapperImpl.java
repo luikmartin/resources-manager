@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-07-16T17:09:24+0300",
+    date = "2025-07-16T19:14:52+0300",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.7 (Microsoft)"
 )
 @Component
@@ -53,10 +53,11 @@ public class ResourceMapperImpl implements ResourceMapper {
 
         Resource resource = new Resource();
 
+        resource.setCharacteristics( characteristicDtoListToCharacteristicList( dto.getCharacteristics() ) );
+        resource.setLocation( locationMapper.toEntity( dto.getLocation() ) );
         resource.setId( dto.getId() );
         resource.setType( dto.getType() );
         resource.setCountryCode( dto.getCountryCode() );
-        resource.setLocation( locationMapper.toEntity( dto.getLocation() ) );
 
         return resource;
     }
@@ -69,6 +70,19 @@ public class ResourceMapperImpl implements ResourceMapper {
         List<CharacteristicDto> list1 = new ArrayList<CharacteristicDto>( list.size() );
         for ( Characteristic characteristic : list ) {
             list1.add( characteristicsMapper.toDto( characteristic ) );
+        }
+
+        return list1;
+    }
+
+    protected List<Characteristic> characteristicDtoListToCharacteristicList(List<CharacteristicDto> list) {
+        if ( list == null ) {
+            return null;
+        }
+
+        List<Characteristic> list1 = new ArrayList<Characteristic>( list.size() );
+        for ( CharacteristicDto characteristicDto : list ) {
+            list1.add( characteristicsMapper.toEntity( characteristicDto ) );
         }
 
         return list1;

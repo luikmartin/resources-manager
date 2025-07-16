@@ -636,8 +636,8 @@ class CharacteristicsControllerIntegrationTest extends BaseIntegrationTest {
   }
 
   @Test
-  @DisplayName("Should return 400 when creating characteristic with non-existent resource ID")
-  void createCharacteristic_WithNonExistentResourceId_ShouldReturnBadRequest() throws Exception {
+  @DisplayName("Should return 404 when creating characteristic with non-existent resource ID")
+  void createCharacteristic_WithNonExistentResourceId_ShouldReturnNotFound() throws Exception {
     // Given
     var nonExistentResourceId = UUID.randomUUID();
     var createDto =
@@ -653,7 +653,7 @@ class CharacteristicsControllerIntegrationTest extends BaseIntegrationTest {
             post(CharacteristicsController.API_URL + "/resource/" + nonExistentResourceId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(createDto)))
-        .andExpect(status().isBadRequest());
+        .andExpect(status().isNotFound());
   }
 
   @Test
