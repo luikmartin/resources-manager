@@ -15,6 +15,57 @@ Spring Boot application for managing resources (metering points and connection p
 - **Messaging**: Apache Kafka + Kafka UI (https://github.com/provectus/kafka-ui)
 - **Testing**: JUnit 5, Testcontainers 1.20.3
 - **Code Quality**: Lombok, JaCoCo (code coverage)
+- **CI/CD**: GitHub Actions
+
+## Continuous Integration (CI)
+
+This project uses GitHub Actions for automated testing and quality assurance.
+
+### CI Workflow
+
+The CI pipeline automatically runs on:
+
+- **Push** to `main` or `develop` branches
+- **Pull requests** targeting `main` or `develop` branches
+
+### CI Steps
+
+The workflow performs the following steps in sequence:
+
+1. **Build Project** - Compiles all code without running tests
+2. **Unit Tests** - Executes all unit tests
+3. **Integration Tests** - Runs integration tests with Testcontainers
+4. **Artifact Upload** - Saves test results and coverage reports
+
+### Viewing CI Results
+
+- **GitHub Actions Tab**: Go to your repository → Actions tab to see workflow runs
+- **Test Results**: Download the "test-results" artifact for detailed test output
+- **Coverage Reports**: Download the "coverage-reports" artifact for JaCoCo coverage
+
+### Manual CI Trigger
+
+You can manually trigger the CI workflow:
+
+1. Go to GitHub repository → Actions tab
+2. Select "CI" workflow
+3. Click "Run workflow" button
+4. Choose branch and click "Run workflow"
+
+### Local CI Simulation
+
+Run the same steps locally before pushing:
+
+```bash
+# Build project only
+./gradlew build -x test
+
+# Run unit tests
+./gradlew test
+
+# Run integration tests
+./gradlew integrationTest
+```
 
 ## Prerequisites
 
