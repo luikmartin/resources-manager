@@ -1,4 +1,4 @@
-package com.martinluik.resourcesmanager.rest;
+package com.martinluik.resourcesmanager.config;
 
 import org.testcontainers.containers.PostgreSQLContainer;
 
@@ -13,11 +13,11 @@ public class TestContainersConfig {
   public static synchronized PostgreSQLContainer<?> getPostgresContainer() {
     if (postgres == null) {
       postgres =
-          new PostgreSQLContainer<>("postgres:15-alpine")
+          new PostgreSQLContainer<>("postgres:17-alpine")
               .withDatabaseName("testdb")
               .withUsername("test")
               .withPassword("test")
-              .withReuse(false);
+              .withReuse(true);
       postgres.start();
     }
     return postgres;

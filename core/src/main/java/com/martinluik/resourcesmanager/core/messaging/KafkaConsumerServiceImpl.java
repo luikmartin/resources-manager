@@ -1,5 +1,8 @@
 package com.martinluik.resourcesmanager.core.messaging;
 
+import static com.martinluik.resourcesmanager.core.config.KafkaConfig.BULK_EXPORT_TOPIC;
+import static com.martinluik.resourcesmanager.core.config.KafkaConfig.RESOURCES_UPDATES_TOPIC;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.martinluik.resourcesmanager.common.dto.ResourceDto;
@@ -13,9 +16,11 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class KafkaConsumerServiceImpl {
 
+  private static final String RESOURCES_GROUP_ID = "resources-group";
+
   private final ObjectMapper mapper;
 
-  @KafkaListener(topics = "resource-updates", groupId = "resources-group")
+  @KafkaListener(topics = RESOURCES_UPDATES_TOPIC, groupId = RESOURCES_GROUP_ID)
   public void listenResourceUpdates(String message) {
     try {
       var resourceDto = mapper.readValue(message, ResourceDto.class);
@@ -26,7 +31,7 @@ public class KafkaConsumerServiceImpl {
     }
   }
 
-  @KafkaListener(topics = "bulk-export", groupId = "resources-group")
+  @KafkaListener(topics = BULK_EXPORT_TOPIC, groupId = RESOURCES_GROUP_ID)
   public void listenBulkExport(String message) {
     try {
       var resourceDto = mapper.readValue(message, ResourceDto.class);

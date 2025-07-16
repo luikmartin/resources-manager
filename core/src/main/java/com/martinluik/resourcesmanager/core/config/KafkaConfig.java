@@ -1,4 +1,4 @@
-package com.martinluik.resourcesmanager.config;
+package com.martinluik.resourcesmanager.core.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;

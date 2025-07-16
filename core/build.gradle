@@ -17,16 +17,22 @@ dependencies {
 
             libs.jacksonDatabind,
             libs.jacksonCore,
-            libs.jetbrainsAnnotations)
+            libs.jacksonDatatypeJsr310,
+            libs.jetbrainsAnnotations,
+            "org.mapstruct:mapstruct:1.5.5.Final")
 
     annotationProcessor libs.lombok
+    annotationProcessor "org.mapstruct:mapstruct-processor:1.5.5.Final"
 
     testAnnotationProcessor libs.lombok
+    testAnnotationProcessor "org.mapstruct:mapstruct-processor:1.5.5.Final"
 
     testImplementation(libs.springBootStarterTest)
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
 }
 
 tasks.named('test') {
-    useJUnitPlatform()
-    jvmArgs '-XX:+EnableDynamicAgentLoading'
+    onlyIf {
+        fileTree('src/test/java').matching { include '**/*Test.java' }.files.size() > 0
+    }
 } 

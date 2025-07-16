@@ -3,6 +3,7 @@ plugins {
     id 'org.springframework.boot' version '3.5.3' apply false
     id 'io.spring.dependency-management' version '1.1.7' apply false
     id 'base'
+    id 'jacoco' // Add JaCoCo for code coverage
 }
 
 ext {
@@ -24,6 +25,7 @@ ext {
 
             jacksonDatabind            : "com.fasterxml.jackson.core:jackson-databind",
             jacksonCore                : "com.fasterxml.jackson.core:jackson-core",
+            jacksonDatatypeJsr310      : "com.fasterxml.jackson.datatype:jackson-datatype-jsr310",
             lombok                     : "org.projectlombok:lombok",
             jetbrainsAnnotations       : "org.jetbrains:annotations:${versions.jetbrainsAnnotations}",
             hibernateValidator         : "org.hibernate.validator:hibernate-validator",
@@ -47,6 +49,7 @@ allprojects {
 subprojects {
     apply plugin: 'java'
     apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'jacoco'
 
     java {
         toolchain {
@@ -75,14 +78,58 @@ subprojects {
         useJUnitPlatform()
         jvmArgs '-XX:+EnableDynamicAgentLoading'
     }
+
+    jacoco {
+        toolVersion = "0.8.11"
+    }
+
+    tasks.withType(Test) {
+        finalizedBy jacocoTestReport
+    }
+
+    jacocoTestReport {
+        dependsOn test
+        reports {
+            xml.required = true
+            html.required = true
+        }
+    }
 }
 
-// Ensure 'clean' on root cleans all subprojects
+// Root project task configurations
 if (project == rootProject) {
+    // Configure root test task to run unit tests from all subprojects
+    tasks.register('test') {
+        description = 'Runs unit tests from all subprojects'
+        group = 'verification'
+        
+        // This will run test tasks from all subprojects
+        dependsOn subprojects.collect { it.tasks.named('test') }
+    }
+    
+    // Configure root integrationTest task to run integration tests from api module only
+    tasks.register('integrationTest') {
+        description = 'Runs integration tests from the api module'
+        group = 'verification'
+        
+        // Only run integrationTest from api module
+        dependsOn project(':api').tasks.named('integrationTest')
+        
+        // Make sure unit tests run before integration tests
+        mustRunAfter test
+    }
+    
+    // Ensure 'clean' on root cleans all subprojects
     tasks.named('clean') {
         dependsOn subprojects.collect { it.tasks.named('clean') }
     }
+    
     tasks.named('build') {
         dependsOn subprojects.collect { it.tasks.named('build') }
+    }
+    
+    // Configure check task to run both unit and integration tests
+    tasks.named('check') {
+        dependsOn test, integrationTest
     }
 }

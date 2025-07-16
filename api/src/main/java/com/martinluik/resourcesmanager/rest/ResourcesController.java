@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class ResourcesController {
 
-  public static final String API_URL = "api/resources";
+  public static final String API_URL = "/api/resources";
 
   private final ResourceService resourceService;
 

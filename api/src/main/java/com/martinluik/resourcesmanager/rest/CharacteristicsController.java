@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class CharacteristicsController {
 
-  public static final String API_URL = "api/characteristics";
+  public static final String API_URL = "/api/characteristics";
 
   private final CharacteristicService characteristicService;
 

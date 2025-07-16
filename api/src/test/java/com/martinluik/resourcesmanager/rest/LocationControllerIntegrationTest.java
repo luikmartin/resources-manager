@@ -12,36 +12,33 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.martinluik.resourcesmanager.common.dto.LocationDto;
 import com.martinluik.resourcesmanager.common.dto.ResourceDto;
+import com.martinluik.resourcesmanager.common.enums.ResourceType;
 import com.martinluik.resourcesmanager.core.domain.Location;
+import com.martinluik.resourcesmanager.core.domain.Resource;
 import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 
 class LocationControllerIntegrationTest extends BaseIntegrationTest {
 
-  private Location testLocationForController;
-
-  @BeforeEach
-  void setUpLocation() {
-    // Create a separate test location for controller tests
-    testLocationForController =
+  @Test
+  @DisplayName("Should retrieve all locations")
+  void getAllLocations_ShouldReturnAllLocations() throws Exception {
+    // Given
+    var location =
         Location.builder()
             .streetAddress("789 Controller Street")
             .city("Controller City")
             .postalCode("67890")
             .countryCode("LV")
             .build();
-    testLocationForController = locationRepository.save(testLocationForController);
-  }
+    locationRepository.save(location);
 
-  @Test
-  @DisplayName("Should retrieve all locations")
-  void getAllLocations_ShouldReturnAllLocations() throws Exception {
     // When & Then
     mockMvc
-        .perform(get("/api/locations"))
+        .perform(get(LocationController.API_URL))
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$").isArray())
@@ -55,12 +52,22 @@ class LocationControllerIntegrationTest extends BaseIntegrationTest {
   @Test
   @DisplayName("Should retrieve location by ID")
   void getLocationById_ShouldReturnLocation() throws Exception {
+    // Given
+    var location =
+        Location.builder()
+            .streetAddress("789 Controller Street")
+            .city("Controller City")
+            .postalCode("67890")
+            .countryCode("LV")
+            .build();
+    location = locationRepository.save(location);
+
     // When & Then
     mockMvc
-        .perform(get("/api/locations/" + testLocationForController.getId()))
+        .perform(get(LocationController.API_URL + "/" + location.getId()))
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.id").value(testLocationForController.getId().toString()))
+        .andExpect(jsonPath("$.id").value(location.getId().toString()))
         .andExpect(jsonPath("$.streetAddress").value("789 Controller Street"))
         .andExpect(jsonPath("$.city").value("Controller City"))
         .andExpect(jsonPath("$.postalCode").value("67890"))
@@ -75,7 +82,7 @@ class LocationControllerIntegrationTest extends BaseIntegrationTest {
 
     // When & Then
     mockMvc
-        .perform(get("/api/locations/" + nonExistentId))
+        .perform(get(LocationController.API_URL + "/" + nonExistentId))
         .andExpect(status().isNotFound())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.status").value(404))
@@ -100,7 +107,7 @@ class LocationControllerIntegrationTest extends BaseIntegrationTest {
     var response =
         mockMvc
             .perform(
-                post("/api/locations")
+                post(LocationController.API_URL)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(locationDto)))
             .andExpect(status().isCreated())
@@ -114,8 +121,8 @@ class LocationControllerIntegrationTest extends BaseIntegrationTest {
             .getResponse()
             .getContentAsString();
 
-    // Verify the location was actually created in the database
     var createdLocation = objectMapper.readValue(response, LocationDto.class);
+    Assertions.assertNotNull(createdLocation.getId());
     var savedLocation = locationRepository.findById(createdLocation.getId()).orElse(null);
     assertThat(savedLocation).isNotNull();
     assertThat(savedLocation.getStreetAddress()).isEqualTo("123 New Street");
@@ -127,19 +134,19 @@ class LocationControllerIntegrationTest extends BaseIntegrationTest {
   @Test
   @DisplayName("Should return 400 when creating location with invalid data")
   void createLocation_WithInvalidData_ShouldReturnBadRequest() throws Exception {
-    // Given - Missing required fields
+    // Given
     var locationDto =
         LocationDto.builder()
-            .streetAddress("") // Empty street address
-            .city("") // Empty city
-            .postalCode("") // Empty postal code
-            .countryCode("INVALID") // Invalid country code (not 2 letters)
+            .streetAddress("")
+            .city("")
+            .postalCode("")
+            .countryCode("INVALID")
             .build();
 
     // When & Then
     mockMvc
         .perform(
-            post("/api/locations")
+            post(LocationController.API_URL)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(locationDto)))
         .andExpect(status().isBadRequest());
@@ -149,9 +156,18 @@ class LocationControllerIntegrationTest extends BaseIntegrationTest {
   @DisplayName("Should update location and persist changes to database")
   void updateLocation_ShouldUpdateAndPersistLocation() throws Exception {
     // Given
+    var location =
+        Location.builder()
+            .streetAddress("789 Controller Street")
+            .city("Controller City")
+            .postalCode("67890")
+            .countryCode("LV")
+            .build();
+    location = locationRepository.save(location);
+
     var updateDto =
         LocationDto.builder()
-            .id(testLocationForController.getId())
+            .id(location.getId())
             .streetAddress("456 Updated Street")
             .city("Updated City")
             .postalCode("54321")
@@ -162,12 +178,12 @@ class LocationControllerIntegrationTest extends BaseIntegrationTest {
     var response =
         mockMvc
             .perform(
-                put("/api/locations")
+                put(LocationController.API_URL)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(updateDto)))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$.id").value(testLocationForController.getId().toString()))
+            .andExpect(jsonPath("$.id").value(location.getId().toString()))
             .andExpect(jsonPath("$.streetAddress").value("456 Updated Street"))
             .andExpect(jsonPath("$.city").value("Updated City"))
             .andExpect(jsonPath("$.postalCode").value("54321"))
@@ -176,8 +192,8 @@ class LocationControllerIntegrationTest extends BaseIntegrationTest {
             .getResponse()
             .getContentAsString();
 
-    // Verify the location was actually updated in the database
     var updatedLocation = objectMapper.readValue(response, LocationDto.class);
+    Assertions.assertNotNull(updatedLocation.getId());
     var savedLocation = locationRepository.findById(updatedLocation.getId()).orElse(null);
     assertThat(savedLocation).isNotNull();
     assertThat(savedLocation.getStreetAddress()).isEqualTo("456 Updated Street");
@@ -203,7 +219,7 @@ class LocationControllerIntegrationTest extends BaseIntegrationTest {
     // When & Then
     mockMvc
         .perform(
-            put("/api/locations")
+            put(LocationController.API_URL)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(updateDto)))
         .andExpect(status().isNotFound())
@@ -217,7 +233,7 @@ class LocationControllerIntegrationTest extends BaseIntegrationTest {
   @Test
   @DisplayName("Should delete location")
   void deleteLocation_ShouldDeleteLocation() throws Exception {
-    // Given - Create a location to delete
+    // Given
     var locationToDelete =
         Location.builder()
             .streetAddress("999 Delete Street")
@@ -229,10 +245,9 @@ class LocationControllerIntegrationTest extends BaseIntegrationTest {
 
     // When & Then
     mockMvc
-        .perform(delete("/api/locations/" + locationToDelete.getId()))
+        .perform(delete(LocationController.API_URL + "/" + locationToDelete.getId()))
         .andExpect(status().isNoContent());
 
-    // Verify the location was actually deleted from the database
     var deletedLocation = locationRepository.findById(locationToDelete.getId()).orElse(null);
     assertThat(deletedLocation).isNull();
   }
@@ -245,7 +260,7 @@ class LocationControllerIntegrationTest extends BaseIntegrationTest {
 
     // When & Then
     mockMvc
-        .perform(delete("/api/locations/" + nonExistentId))
+        .perform(delete(LocationController.API_URL + "/" + nonExistentId))
         .andExpect(status().isNotFound())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.status").value(404))
@@ -258,6 +273,20 @@ class LocationControllerIntegrationTest extends BaseIntegrationTest {
   @DisplayName("Should update resource location and persist changes")
   void updateResourceLocation_ShouldUpdateResourceLocation() throws Exception {
     // Given
+    var resource =
+        Resource.builder()
+            .type(ResourceType.CONNECTION_POINT)
+            .countryCode("EE")
+            .location(
+                Location.builder()
+                    .streetAddress("789 Controller Street")
+                    .city("Controller City")
+                    .postalCode("67890")
+                    .countryCode("LV")
+                    .build())
+            .build();
+    resource = resourceRepository.save(resource);
+
     var newLocationDto =
         LocationDto.builder()
             .streetAddress("777 Resource Street")
@@ -270,12 +299,12 @@ class LocationControllerIntegrationTest extends BaseIntegrationTest {
     var response =
         mockMvc
             .perform(
-                put("/api/locations/resource/" + testResource.getId())
+                put(LocationController.API_URL + "/resource/" + resource.getId())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(newLocationDto)))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$.id").value(testResource.getId().toString()))
+            .andExpect(jsonPath("$.id").value(resource.getId().toString()))
             .andExpect(jsonPath("$.location.streetAddress").value("777 Resource Street"))
             .andExpect(jsonPath("$.location.city").value("Resource City"))
             .andExpect(jsonPath("$.location.postalCode").value("77777"))
@@ -284,8 +313,8 @@ class LocationControllerIntegrationTest extends BaseIntegrationTest {
             .getResponse()
             .getContentAsString();
 
-    // Verify the resource location was actually updated in the database
     var updatedResource = objectMapper.readValue(response, ResourceDto.class);
+    Assertions.assertNotNull(updatedResource.getId());
     var savedResource = resourceRepository.findById(updatedResource.getId()).orElse(null);
     assertThat(savedResource).isNotNull();
     assertThat(savedResource.getLocation().getStreetAddress()).isEqualTo("777 Resource Street");
@@ -310,7 +339,7 @@ class LocationControllerIntegrationTest extends BaseIntegrationTest {
     // When & Then
     mockMvc
         .perform(
-            put("/api/locations/resource/" + nonExistentResourceId)
+            put(LocationController.API_URL + "/resource/" + nonExistentResourceId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(newLocationDto)))
         .andExpect(status().isNotFound())

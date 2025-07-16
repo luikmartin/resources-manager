@@ -1,5 +1,8 @@
 package com.martinluik.resourcesmanager.core.messaging;
 
+import static com.martinluik.resourcesmanager.core.config.KafkaConfig.BULK_EXPORT_TOPIC;
+import static com.martinluik.resourcesmanager.core.config.KafkaConfig.RESOURCES_UPDATES_TOPIC;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.martinluik.resourcesmanager.common.dto.ResourceDto;
@@ -23,7 +26,7 @@ public class KafkaProducerServiceImpl implements KafkaService {
     try {
       var resourceData = objectMapper.writeValueAsString(resourceDto);
       var future =
-          kafkaTemplate.send("resource-updates", String.valueOf(resourceDto.getId()), resourceData);
+          kafkaTemplate.send(RESOURCES_UPDATES_TOPIC, String.valueOf(resourceDto.getId()), resourceData);
 
       future.whenComplete(
           (result, ex) -> {
@@ -60,7 +63,7 @@ public class KafkaProducerServiceImpl implements KafkaService {
       try {
         var resourceData = objectMapper.writeValueAsString(resource);
         var future =
-            kafkaTemplate.send("bulk-export", String.valueOf(resource.getId()), resourceData);
+            kafkaTemplate.send(BULK_EXPORT_TOPIC, String.valueOf(resource.getId()), resourceData);
 
         future.whenComplete(
             (result, ex) -> {

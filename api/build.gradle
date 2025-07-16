@@ -48,7 +48,24 @@ tasks.register('integrationTest', Test) {
 
     mustRunAfter test
 
+    // Performance optimizations for integration tests
     jvmArgs '-XX:+UseG1GC', '-Xmx2g', '-XX:+EnableDynamicAgentLoading'
+    
+    // Disable parallel test execution for integration tests
+    // maxParallelForks = Math.max(1, Runtime.runtime.availableProcessors().intdiv(2))
+    maxParallelForks = 1
+    
+    // Set test timeout
+    timeout = Duration.ofMinutes(10)
+    
+    // Note: Test retry functionality removed - not supported by standard Gradle Test task
+    
+    // Configure test logging
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat = 'full'
+        showStandardStreams = true
+    }
 }
 
 check.dependsOn integrationTest

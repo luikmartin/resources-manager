@@ -1,6 +1,10 @@
 package com.martinluik.resourcesmanager.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -12,12 +16,19 @@ import com.martinluik.resourcesmanager.common.dto.LocationDto;
 import com.martinluik.resourcesmanager.common.dto.ResourceDto;
 import com.martinluik.resourcesmanager.common.enums.CharacteristicType;
 import com.martinluik.resourcesmanager.common.enums.ResourceType;
+import com.martinluik.resourcesmanager.core.config.KafkaConfig;
 import java.util.List;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.MediaType;
+import org.springframework.kafka.core.KafkaTemplate;
 
 class ResourceControllerIntegrationTest extends BaseIntegrationTest {
+
+  @SpyBean private KafkaTemplate<String, String> kafkaTemplate;
 
   @Test
   @DisplayName("Should create resource and send Kafka message with correct data")
@@ -46,11 +57,11 @@ class ResourceControllerIntegrationTest extends BaseIntegrationTest {
             .characteristics(List.of(characteristic))
             .build();
 
-    // When & Then
+    // When
     var response =
         mockMvc
             .perform(
-                post("/api/resources")
+                post(ResourcesController.API_URL)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(resourceDto)))
             .andExpect(status().isCreated())
@@ -62,20 +73,27 @@ class ResourceControllerIntegrationTest extends BaseIntegrationTest {
             .getResponse()
             .getContentAsString();
 
-    // Verify the resource was created in the database
+    // Then
     var createdResource = objectMapper.readValue(response, ResourceDto.class);
+    Assertions.assertNotNull(createdResource.getId());
     var savedResource = resourceRepository.findById(createdResource.getId()).orElse(null);
     assertThat(savedResource).isNotNull();
     assertThat(savedResource.getType()).isEqualTo(ResourceType.CONNECTION_POINT);
     assertThat(savedResource.getCountryCode()).isEqualTo("EE");
 
-    // Resource was created successfully and persisted to database
+    var payloadCaptor = ArgumentCaptor.forClass(String.class);
+    verify(kafkaTemplate, times(1))
+        .send(eq("resource-updates"), anyString(), payloadCaptor.capture());
+
+    var payload = payloadCaptor.getValue();
+    assertThat(payload).contains("CONNECTION_POINT");
+    assertThat(payload).contains("EE");
   }
 
   @Test
   @DisplayName("Should update resource and send Kafka message with correct data")
   void updateResource_ShouldSendKafkaMessage() throws Exception {
-    // Given - Create a resource first
+    // Given
     var characteristic =
         CharacteristicDto.builder()
             .code("TEST1")
@@ -102,7 +120,7 @@ class ResourceControllerIntegrationTest extends BaseIntegrationTest {
     var createResponse =
         mockMvc
             .perform(
-                post("/api/resources")
+                post(ResourcesController.API_URL)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(resourceDto)))
             .andExpect(status().isCreated())
@@ -112,23 +130,21 @@ class ResourceControllerIntegrationTest extends BaseIntegrationTest {
 
     var createdResource = objectMapper.readValue(createResponse, ResourceDto.class);
 
-    // Resource created successfully
-
-    // Update the resource
     var updatedResourceDto =
         ResourceDto.builder()
             .id(createdResource.getId())
-            .type(ResourceType.METERING_POINT) // Changed type
-            .countryCode("LV") // Changed country
+            .type(ResourceType.METERING_POINT)
+            .countryCode("LV")
             .location(location)
             .characteristics(List.of(characteristic))
             .build();
 
-    // When & Then
+    // When
+    Assertions.assertNotNull(createdResource.getId());
     var updateResponse =
         mockMvc
             .perform(
-                put("/api/resources")
+                put(ResourcesController.API_URL)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(updatedResourceDto)))
             .andExpect(status().isOk())
@@ -140,21 +156,29 @@ class ResourceControllerIntegrationTest extends BaseIntegrationTest {
             .getResponse()
             .getContentAsString();
 
+    // Then
     var updatedResource = objectMapper.readValue(updateResponse, ResourceDto.class);
-
-    // Verify the resource was updated in the database
+    Assertions.assertNotNull(updatedResource.getId());
     var savedResource = resourceRepository.findById(updatedResource.getId()).orElse(null);
+
     assertThat(savedResource).isNotNull();
     assertThat(savedResource.getType()).isEqualTo(ResourceType.METERING_POINT);
     assertThat(savedResource.getCountryCode()).isEqualTo("LV");
 
-    // Resource was updated successfully and persisted to database
+    var payloadCaptor = ArgumentCaptor.forClass(String.class);
+    verify(kafkaTemplate, times(2))
+        .send(eq(KafkaConfig.RESOURCES_UPDATES_TOPIC), anyString(), payloadCaptor.capture());
+
+    var allPayloads = payloadCaptor.getAllValues();
+    var updatePayload = allPayloads.getLast();
+    assertThat(updatePayload).contains("METERING_POINT");
+    assertThat(updatePayload).contains("LV");
   }
 
   @Test
   @DisplayName("Should send bulk export Kafka message with correct data")
   void exportAllResources_ShouldSendBulkExportKafkaMessage() throws Exception {
-    // Given - Create multiple resources
+    // Given
     var characteristic =
         CharacteristicDto.builder()
             .code("TEST1")
@@ -194,11 +218,10 @@ class ResourceControllerIntegrationTest extends BaseIntegrationTest {
             .characteristics(List.of(characteristic))
             .build();
 
-    // Create resources
     var response1 =
         mockMvc
             .perform(
-                post("/api/resources")
+                post(ResourcesController.API_URL)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(resource1)))
             .andExpect(status().isCreated())
@@ -209,7 +232,7 @@ class ResourceControllerIntegrationTest extends BaseIntegrationTest {
     var response2 =
         mockMvc
             .perform(
-                post("/api/resources")
+                post(ResourcesController.API_URL)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(resource2)))
             .andExpect(status().isCreated())
@@ -220,16 +243,20 @@ class ResourceControllerIntegrationTest extends BaseIntegrationTest {
     var createdResource1 = objectMapper.readValue(response1, ResourceDto.class);
     var createdResource2 = objectMapper.readValue(response2, ResourceDto.class);
 
-    // Resources created successfully
+    // When
+    mockMvc
+        .perform(post(ResourcesController.API_URL + "/bulk-export"))
+        .andExpect(status().isAccepted());
 
-    // When - Trigger bulk export
-    mockMvc.perform(post("/api/resources/bulk-export")).andExpect(status().isAccepted());
-
-    // Then - Bulk export was initiated successfully
-    // Verify that both resources exist in the database
+    // Then
+    Assertions.assertNotNull(createdResource1.getId());
     var savedResource1 = resourceRepository.findById(createdResource1.getId()).orElse(null);
+    Assertions.assertNotNull(createdResource2.getId());
     var savedResource2 = resourceRepository.findById(createdResource2.getId()).orElse(null);
     assertThat(savedResource1).isNotNull();
     assertThat(savedResource2).isNotNull();
+
+    verify(kafkaTemplate, times(2))
+        .send(eq(KafkaConfig.BULK_EXPORT_TOPIC), anyString(), anyString());
   }
 }

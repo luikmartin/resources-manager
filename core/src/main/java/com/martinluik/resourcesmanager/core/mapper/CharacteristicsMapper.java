@@ -1,28 +1,17 @@
 package com.martinluik.resourcesmanager.core.mapper;
 
 import com.martinluik.resourcesmanager.common.dto.CharacteristicDto;
+import com.martinluik.resourcesmanager.core.config.CommonMapperConfig;
 import com.martinluik.resourcesmanager.core.domain.Characteristic;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Component
-public class CharacteristicsMapper {
+@Mapper(config = CommonMapperConfig.class, componentModel = "spring")
+public interface CharacteristicsMapper {
 
-  public CharacteristicDto toDto(Characteristic entity) {
-    return CharacteristicDto.builder()
-        .id(entity.getId())
-        .resourceId(entity.getResource() != null ? entity.getResource().getId() : null)
-        .code(entity.getCode())
-        .type(entity.getType())
-        .value(entity.getValue())
-        .build();
-  }
+  @Mapping(target = "resourceId", source = "resource.id")
+  CharacteristicDto toDto(Characteristic entity);
 
-  public Characteristic toEntity(CharacteristicDto dto) {
-    return Characteristic.builder()
-        .id(dto.getId())
-        .code(dto.getCode())
-        .type(dto.getType())
-        .value(dto.getValue())
-        .build();
-  }
+  @Mapping(target = "resource", ignore = true)
+  Characteristic toEntity(CharacteristicDto dto);
 }

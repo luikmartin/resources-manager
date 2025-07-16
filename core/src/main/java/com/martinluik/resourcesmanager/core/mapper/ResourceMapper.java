@@ -1,41 +1,21 @@
 package com.martinluik.resourcesmanager.core.mapper;
 
-import com.martinluik.resourcesmanager.common.dto.CharacteristicDto;
 import com.martinluik.resourcesmanager.common.dto.ResourceDto;
+import com.martinluik.resourcesmanager.core.config.CommonMapperConfig;
 import com.martinluik.resourcesmanager.core.domain.Resource;
-import java.util.List;
-import lombok.AllArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Component
-@AllArgsConstructor
-public class ResourceMapper {
+@Mapper(
+    config = CommonMapperConfig.class,
+    componentModel = "spring",
+    uses = {LocationMapper.class, CharacteristicsMapper.class})
+public interface ResourceMapper {
 
-  private final LocationMapper locationMapper;
-  private final CharacteristicsMapper characteristicsMapper;
+  @Mapping(target = "characteristics", source = "characteristics")
+  @Mapping(target = "location", source = "location")
+  ResourceDto toDto(Resource resource);
 
-  public ResourceDto toDto(Resource resource) {
-    List<CharacteristicDto> characteristics = null;
-    if (resource.getCharacteristics() != null) {
-      characteristics =
-          resource.getCharacteristics().stream().map(characteristicsMapper::toDto).toList();
-    }
-
-    return ResourceDto.builder()
-        .id(resource.getId())
-        .type(resource.getType())
-        .countryCode(resource.getCountryCode())
-        .location(locationMapper.toDto(resource.getLocation()))
-        .characteristics(characteristics)
-        .build();
-  }
-
-  public Resource toEntity(ResourceDto dto) {
-    return Resource.builder()
-        .id(dto.getId())
-        .type(dto.getType())
-        .countryCode(dto.getCountryCode())
-        .location(locationMapper.toEntity(dto.getLocation()))
-        .build();
-  }
+  @Mapping(target = "characteristics", ignore = true)
+  Resource toEntity(ResourceDto dto);
 }

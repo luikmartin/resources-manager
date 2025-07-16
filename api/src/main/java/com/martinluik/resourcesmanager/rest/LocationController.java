@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class LocationController {
 
-  public static final String API_URL = "api/locations";
+  public static final String API_URL = "/api/locations";
 
   private final LocationService locationService;
   private final ResourceService resourceService;

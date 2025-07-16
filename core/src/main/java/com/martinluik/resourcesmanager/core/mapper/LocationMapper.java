@@ -1,29 +1,14 @@
 package com.martinluik.resourcesmanager.core.mapper;
 
 import com.martinluik.resourcesmanager.common.dto.LocationDto;
+import com.martinluik.resourcesmanager.core.config.CommonMapperConfig;
 import com.martinluik.resourcesmanager.core.domain.Location;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
 
-@Component
-public class LocationMapper {
+@Mapper(config = CommonMapperConfig.class, componentModel = "spring")
+public interface LocationMapper {
 
-  public LocationDto toDto(Location entity) {
-    return LocationDto.builder()
-        .id(entity.getId())
-        .streetAddress(entity.getStreetAddress())
-        .city(entity.getCity())
-        .postalCode(entity.getPostalCode())
-        .countryCode(entity.getCountryCode())
-        .build();
-  }
+  LocationDto toDto(Location entity);
 
-  public Location toEntity(LocationDto dto) {
-    return Location.builder()
-        .id(dto.getId())
-        .streetAddress(dto.getStreetAddress())
-        .city(dto.getCity())
-        .postalCode(dto.getPostalCode())
-        .countryCode(dto.getCountryCode())
-        .build();
-  }
+  Location toEntity(LocationDto dto);
 }

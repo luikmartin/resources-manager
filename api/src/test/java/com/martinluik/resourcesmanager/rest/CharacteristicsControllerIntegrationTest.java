@@ -11,94 +11,111 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.martinluik.resourcesmanager.common.dto.CharacteristicDto;
 import com.martinluik.resourcesmanager.common.enums.CharacteristicType;
+import com.martinluik.resourcesmanager.common.enums.ResourceType;
 import com.martinluik.resourcesmanager.core.domain.Characteristic;
 import com.martinluik.resourcesmanager.core.domain.Location;
 import com.martinluik.resourcesmanager.core.domain.Resource;
 import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 
 class CharacteristicsControllerIntegrationTest extends BaseIntegrationTest {
 
-  private Characteristic testCharacteristic;
-
-  @BeforeEach
-  void setUpCharacteristic() {
-    // Create test characteristic
-    testCharacteristic =
-        Characteristic.builder()
-            .code("TEST1")
-            .type(CharacteristicType.CONSUMPTION_TYPE)
-            .value("Fast Charging")
-            .resource(testResource)
-            .build();
-    testCharacteristic = characteristicRepository.save(testCharacteristic);
-  }
-
   @Test
   @DisplayName(
       "Should successfully update characteristic with valid data and persist changes to database")
   void updateCharacteristic_WithValidData_ShouldReturnUpdatedCharacteristic() throws Exception {
-    // Given - Store original values for comparison
-    var originalCode = testCharacteristic.getCode();
-    var originalType = testCharacteristic.getType();
-    var originalValue = testCharacteristic.getValue();
+    // Given
+    var location =
+        Location.builder()
+            .streetAddress("123 Test Street")
+            .city("Test City")
+            .postalCode("12345")
+            .countryCode("EE")
+            .build();
+    location = locationRepository.save(location);
+
+    var resource =
+        Resource.builder()
+            .type(ResourceType.CONNECTION_POINT)
+            .countryCode("EE")
+            .location(location)
+            .build();
+    resource = resourceRepository.save(resource);
+
+    var characteristic =
+        Characteristic.builder()
+            .code("TEST1")
+            .type(CharacteristicType.CONSUMPTION_TYPE)
+            .value("Fast Charging")
+            .resource(resource)
+            .build();
+    characteristic = characteristicRepository.save(characteristic);
 
     var updateDto =
         CharacteristicDto.builder()
-            .id(testCharacteristic.getId())
-            .resourceId(testResource.getId())
+            .id(characteristic.getId())
+            .resourceId(resource.getId())
             .code("TEST2")
             .type(CharacteristicType.CHARGING_POINT)
             .value("Updated Value")
             .build();
 
-    // When & Then
-    var response =
-        mockMvc
-            .perform(
-                put("/api/characteristics")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(updateDto)))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$.id").value(testCharacteristic.getId().toString()))
-            .andExpect(jsonPath("$.resourceId").value(testResource.getId().toString()))
-            .andExpect(jsonPath("$.code").value("TEST2"))
-            .andExpect(jsonPath("$.type").value("CHARGING_POINT"))
-            .andExpect(jsonPath("$.value").value("Updated Value"))
-            .andReturn()
-            .getResponse()
-            .getContentAsString();
+    // When
+    mockMvc
+        .perform(
+            put(CharacteristicsController.API_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateDto)))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.id").value(characteristic.getId().toString()))
+        .andExpect(jsonPath("$.resourceId").value(resource.getId().toString()))
+        .andExpect(jsonPath("$.code").value("TEST2"))
+        .andExpect(jsonPath("$.type").value("CHARGING_POINT"))
+        .andExpect(jsonPath("$.value").value("Updated Value"))
+        .andReturn()
+        .getResponse()
+        .getContentAsString();
 
-    // Verify the characteristic was actually updated in the database
+    // Then
     var updatedCharacteristic =
-        characteristicRepository.findById(testCharacteristic.getId()).orElse(null);
+        characteristicRepository.findById(characteristic.getId()).orElse(null);
     assertThat(updatedCharacteristic).isNotNull();
     assertThat(updatedCharacteristic.getCode()).isEqualTo("TEST2");
     assertThat(updatedCharacteristic.getType()).isEqualTo(CharacteristicType.CHARGING_POINT);
     assertThat(updatedCharacteristic.getValue()).isEqualTo("Updated Value");
 
-    // Verify that the original values were actually changed
-    assertThat(updatedCharacteristic.getCode()).isNotEqualTo(originalCode);
-    assertThat(updatedCharacteristic.getType()).isNotEqualTo(originalType);
-    assertThat(updatedCharacteristic.getValue()).isNotEqualTo(originalValue);
-
-    // Verify the resource relationship is maintained
-    assertThat(updatedCharacteristic.getResource().getId()).isEqualTo(testResource.getId());
+    assertThat(updatedCharacteristic.getResource().getId()).isEqualTo(resource.getId());
   }
 
   @Test
   @DisplayName("Should return 404 when trying to update characteristic with non-existent ID")
   void updateCharacteristic_WithNonExistentId_ShouldReturnNotFound() throws Exception {
     // Given
+    var location =
+        Location.builder()
+            .streetAddress("123 Test Street")
+            .city("Test City")
+            .postalCode("12345")
+            .countryCode("EE")
+            .build();
+    location = locationRepository.save(location);
+
+    var resource =
+        Resource.builder()
+            .type(ResourceType.CONNECTION_POINT)
+            .countryCode("EE")
+            .location(location)
+            .build();
+    resource = resourceRepository.save(resource);
+
     var nonExistentId = UUID.randomUUID();
     var updateDto =
         CharacteristicDto.builder()
             .id(nonExistentId)
-            .resourceId(testResource.getId())
+            .resourceId(resource.getId())
             .code("TEST2")
             .type(CharacteristicType.CHARGING_POINT)
             .value("Updated Value")
@@ -107,7 +124,7 @@ class CharacteristicsControllerIntegrationTest extends BaseIntegrationTest {
     // When & Then
     mockMvc
         .perform(
-            put("/api/characteristics")
+            put(CharacteristicsController.API_URL)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(updateDto)))
         .andExpect(status().isNotFound());
@@ -117,18 +134,40 @@ class CharacteristicsControllerIntegrationTest extends BaseIntegrationTest {
   @DisplayName(
       "Should return 400 when trying to update characteristic with missing required fields")
   void updateCharacteristic_WithInvalidData_ShouldReturnBadRequest() throws Exception {
-    // Given - Missing required fields
-    var updateDto =
-        CharacteristicDto.builder()
-            .id(testCharacteristic.getId())
-            .resourceId(testResource.getId())
-            // Missing code, type, and value
+    // Given
+    var location =
+        Location.builder()
+            .streetAddress("123 Test Street")
+            .city("Test City")
+            .postalCode("12345")
+            .countryCode("EE")
             .build();
+    location = locationRepository.save(location);
+
+    var resource =
+        Resource.builder()
+            .type(ResourceType.CONNECTION_POINT)
+            .countryCode("EE")
+            .location(location)
+            .build();
+    resource = resourceRepository.save(resource);
+
+    var characteristic =
+        Characteristic.builder()
+            .code("TEST1")
+            .type(CharacteristicType.CONSUMPTION_TYPE)
+            .value("Fast Charging")
+            .resource(resource)
+            .build();
+    characteristic = characteristicRepository.save(characteristic);
+
+    var updateDto =
+        CharacteristicDto.builder().id(characteristic.getId()).resourceId(resource.getId()).build();
 
     // When & Then
     mockMvc
         .perform(
-            put("/api/characteristics")
+            put(CharacteristicsController.API_URL)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(updateDto)))
         .andExpect(status().isBadRequest());
@@ -138,11 +177,37 @@ class CharacteristicsControllerIntegrationTest extends BaseIntegrationTest {
   @DisplayName(
       "Should return 400 when trying to update characteristic with code exceeding maximum length")
   void updateCharacteristic_WithInvalidCodeLength_ShouldReturnBadRequest() throws Exception {
-    // Given - Code too long (max 5 characters)
+    // Given
+    var location =
+        Location.builder()
+            .streetAddress("123 Test Street")
+            .city("Test City")
+            .postalCode("12345")
+            .countryCode("EE")
+            .build();
+    location = locationRepository.save(location);
+
+    var resource =
+        Resource.builder()
+            .type(ResourceType.CONNECTION_POINT)
+            .countryCode("EE")
+            .location(location)
+            .build();
+    resource = resourceRepository.save(resource);
+
+    var characteristic =
+        Characteristic.builder()
+            .code("TEST1")
+            .type(CharacteristicType.CONSUMPTION_TYPE)
+            .value("Fast Charging")
+            .resource(resource)
+            .build();
+    characteristic = characteristicRepository.save(characteristic);
+
     var updateDto =
         CharacteristicDto.builder()
-            .id(testCharacteristic.getId())
-            .resourceId(testResource.getId())
+            .id(characteristic.getId())
+            .resourceId(resource.getId())
             .code("TOOLONG") // 7 characters, max is 5
             .type(CharacteristicType.CONSUMPTION_TYPE)
             .value("Valid Value")
@@ -151,7 +216,7 @@ class CharacteristicsControllerIntegrationTest extends BaseIntegrationTest {
     // When & Then
     mockMvc
         .perform(
-            put("/api/characteristics")
+            put(CharacteristicsController.API_URL)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(updateDto)))
         .andExpect(status().isBadRequest());
@@ -161,12 +226,38 @@ class CharacteristicsControllerIntegrationTest extends BaseIntegrationTest {
   @DisplayName(
       "Should return 400 when trying to update characteristic with value exceeding maximum length")
   void updateCharacteristic_WithInvalidValueLength_ShouldReturnBadRequest() throws Exception {
-    // Given - Value too long (max 1000 characters)
+    // Given
+    var location =
+        Location.builder()
+            .streetAddress("123 Test Street")
+            .city("Test City")
+            .postalCode("12345")
+            .countryCode("EE")
+            .build();
+    location = locationRepository.save(location);
+
+    var resource =
+        Resource.builder()
+            .type(ResourceType.CONNECTION_POINT)
+            .countryCode("EE")
+            .location(location)
+            .build();
+    resource = resourceRepository.save(resource);
+
+    var characteristic =
+        Characteristic.builder()
+            .code("TEST1")
+            .type(CharacteristicType.CONSUMPTION_TYPE)
+            .value("Fast Charging")
+            .resource(resource)
+            .build();
+    characteristic = characteristicRepository.save(characteristic);
+
     var longValue = "A".repeat(1001);
     var updateDto =
         CharacteristicDto.builder()
-            .id(testCharacteristic.getId())
-            .resourceId(testResource.getId())
+            .id(characteristic.getId())
+            .resourceId(resource.getId())
             .code("TEST2")
             .type(CharacteristicType.CONSUMPTION_TYPE)
             .value(longValue)
@@ -175,7 +266,7 @@ class CharacteristicsControllerIntegrationTest extends BaseIntegrationTest {
     // When & Then
     mockMvc
         .perform(
-            put("/api/characteristics")
+            put(CharacteristicsController.API_URL)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(updateDto)))
         .andExpect(status().isBadRequest());
@@ -184,20 +275,46 @@ class CharacteristicsControllerIntegrationTest extends BaseIntegrationTest {
   @Test
   @DisplayName("Should return 400 when trying to update characteristic with empty value")
   void updateCharacteristic_WithEmptyValue_ShouldReturnBadRequest() throws Exception {
-    // Given - Empty value (min 1 character)
+    // Given
+    var location =
+        Location.builder()
+            .streetAddress("123 Test Street")
+            .city("Test City")
+            .postalCode("12345")
+            .countryCode("EE")
+            .build();
+    location = locationRepository.save(location);
+
+    var resource =
+        Resource.builder()
+            .type(ResourceType.CONNECTION_POINT)
+            .countryCode("EE")
+            .location(location)
+            .build();
+    resource = resourceRepository.save(resource);
+
+    var characteristic =
+        Characteristic.builder()
+            .code("TEST1")
+            .type(CharacteristicType.CONSUMPTION_TYPE)
+            .value("Fast Charging")
+            .resource(resource)
+            .build();
+    characteristic = characteristicRepository.save(characteristic);
+
     var updateDto =
         CharacteristicDto.builder()
-            .id(testCharacteristic.getId())
-            .resourceId(testResource.getId())
+            .id(characteristic.getId())
+            .resourceId(resource.getId())
             .code("TEST2")
             .type(CharacteristicType.CONSUMPTION_TYPE)
-            .value("") // Empty value
+            .value("")
             .build();
 
     // When & Then
     mockMvc
         .perform(
-            put("/api/characteristics")
+            put(CharacteristicsController.API_URL)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(updateDto)))
         .andExpect(status().isBadRequest());
@@ -206,11 +323,36 @@ class CharacteristicsControllerIntegrationTest extends BaseIntegrationTest {
   @Test
   @DisplayName("Should return 400 when trying to update characteristic with null ID")
   void updateCharacteristic_WithNullId_ShouldReturnBadRequest() throws Exception {
-    // Given - Null ID
+    // Given
+    var location =
+        Location.builder()
+            .streetAddress("123 Test Street")
+            .city("Test City")
+            .postalCode("12345")
+            .countryCode("EE")
+            .build();
+    location = locationRepository.save(location);
+
+    var resource =
+        Resource.builder()
+            .type(ResourceType.CONNECTION_POINT)
+            .countryCode("EE")
+            .location(location)
+            .build();
+    resource = resourceRepository.save(resource);
+
+    var characteristic =
+        Characteristic.builder()
+            .code("TEST1")
+            .type(CharacteristicType.CONSUMPTION_TYPE)
+            .value("Fast Charging")
+            .resource(resource)
+            .build();
+    characteristicRepository.save(characteristic);
+
     var updateDto =
         CharacteristicDto.builder()
-            .id(null) // Null ID
-            .resourceId(testResource.getId())
+            .resourceId(resource.getId())
             .code("TEST2")
             .type(CharacteristicType.CONSUMPTION_TYPE)
             .value("Valid Value")
@@ -219,31 +361,51 @@ class CharacteristicsControllerIntegrationTest extends BaseIntegrationTest {
     // When & Then
     mockMvc
         .perform(
-            put("/api/characteristics")
+            put(CharacteristicsController.API_URL)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(updateDto)))
         .andExpect(status().isBadRequest());
   }
 
-  // GET /api/characteristics - Get all characteristics
   @Test
   @DisplayName("Should return all characteristics")
   void getAllCharacteristics_ShouldReturnAllCharacteristics() throws Exception {
-    // Given - We already have testCharacteristic created in setUpCharacteristic()
-
-    // Create another characteristic for testing
-    var secondCharacteristic =
+    // Given
+    var location =
+        Location.builder()
+            .streetAddress("123 Test Street")
+            .city("Test City")
+            .postalCode("12345")
+            .countryCode("EE")
+            .build();
+    location = locationRepository.save(location);
+    var resource =
+        Resource.builder()
+            .type(ResourceType.CONNECTION_POINT)
+            .countryCode("EE")
+            .location(location)
+            .build();
+    resource = resourceRepository.save(resource);
+    var characteristic1 =
+        Characteristic.builder()
+            .code("TEST1")
+            .type(CharacteristicType.CONSUMPTION_TYPE)
+            .value("Fast Charging")
+            .resource(resource)
+            .build();
+    characteristicRepository.save(characteristic1);
+    var characteristic2 =
         Characteristic.builder()
             .code("TEST2")
             .type(CharacteristicType.CHARGING_POINT)
             .value("Slow Charging")
-            .resource(testResource)
+            .resource(resource)
             .build();
-    characteristicRepository.save(secondCharacteristic);
+    characteristicRepository.save(characteristic2);
 
     // When & Then
     mockMvc
-        .perform(get("/api/characteristics"))
+        .perform(get(CharacteristicsController.API_URL))
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$").isArray())
@@ -253,16 +415,42 @@ class CharacteristicsControllerIntegrationTest extends BaseIntegrationTest {
         .andExpect(jsonPath("$[0].value").exists());
   }
 
-  // GET /api/characteristics/{id} - Get characteristic by ID
   @Test
   @DisplayName("Should return characteristic when valid ID is provided")
   void getCharacteristicById_WithValidId_ShouldReturnCharacteristic() throws Exception {
+    // Given
+    var location =
+        Location.builder()
+            .streetAddress("123 Test Street")
+            .city("Test City")
+            .postalCode("12345")
+            .countryCode("EE")
+            .build();
+    location = locationRepository.save(location);
+
+    var resource =
+        Resource.builder()
+            .type(ResourceType.CONNECTION_POINT)
+            .countryCode("EE")
+            .location(location)
+            .build();
+    resource = resourceRepository.save(resource);
+
+    var characteristic =
+        Characteristic.builder()
+            .code("TEST1")
+            .type(CharacteristicType.CONSUMPTION_TYPE)
+            .value("Fast Charging")
+            .resource(resource)
+            .build();
+    characteristic = characteristicRepository.save(characteristic);
+
     // When & Then
     mockMvc
-        .perform(get("/api/characteristics/" + testCharacteristic.getId()))
+        .perform(get(CharacteristicsController.API_URL + "/" + characteristic.getId()))
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.id").value(testCharacteristic.getId().toString()))
+        .andExpect(jsonPath("$.id").value(characteristic.getId().toString()))
         .andExpect(jsonPath("$.code").value("TEST1"))
         .andExpect(jsonPath("$.type").value("CONSUMPTION_TYPE"))
         .andExpect(jsonPath("$.value").value("Fast Charging"));
@@ -275,73 +463,113 @@ class CharacteristicsControllerIntegrationTest extends BaseIntegrationTest {
     var nonExistentId = UUID.randomUUID();
 
     // When & Then
-    mockMvc.perform(get("/api/characteristics/" + nonExistentId)).andExpect(status().isNotFound());
+    mockMvc
+        .perform(get(CharacteristicsController.API_URL + "/" + nonExistentId))
+        .andExpect(status().isNotFound());
   }
 
-  // GET /api/characteristics/resource/{resourceId} - Get characteristics by resource ID
   @Test
   @DisplayName("Should return characteristics for valid resource ID")
   void getCharacteristicsByResourceId_WithValidResourceId_ShouldReturnCharacteristics()
       throws Exception {
-    // Given - We already have testCharacteristic for testResource
+    // Given
+    var location =
+        Location.builder()
+            .streetAddress("123 Test Street")
+            .city("Test City")
+            .postalCode("12345")
+            .countryCode("EE")
+            .build();
+    location = locationRepository.save(location);
 
-    // Create another characteristic for the same resource
-    var secondCharacteristic =
+    var resource =
+        Resource.builder()
+            .type(ResourceType.CONNECTION_POINT)
+            .countryCode("EE")
+            .location(location)
+            .build();
+    resource = resourceRepository.save(resource);
+
+    var characteristic1 =
+        Characteristic.builder()
+            .code("TEST1")
+            .type(CharacteristicType.CONSUMPTION_TYPE)
+            .value("Fast Charging")
+            .resource(resource)
+            .build();
+    characteristicRepository.save(characteristic1);
+
+    var characteristic2 =
         Characteristic.builder()
             .code("TEST2")
             .type(CharacteristicType.CHARGING_POINT)
             .value("Slow Charging")
-            .resource(testResource)
+            .resource(resource)
             .build();
-    characteristicRepository.save(secondCharacteristic);
+    characteristicRepository.save(characteristic2);
 
     // When & Then
     mockMvc
-        .perform(get("/api/characteristics/resource/" + testResource.getId()))
+        .perform(get(CharacteristicsController.API_URL + "/resource/" + resource.getId()))
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$").isArray())
         .andExpect(jsonPath("$").value(org.hamcrest.Matchers.hasSize(2)))
-        .andExpect(jsonPath("$[0].resourceId").value(testResource.getId().toString()))
-        .andExpect(jsonPath("$[1].resourceId").value(testResource.getId().toString()));
+        .andExpect(jsonPath("$[0].resourceId").value(resource.getId().toString()))
+        .andExpect(jsonPath("$[1].resourceId").value(resource.getId().toString()));
   }
 
   @Test
   @DisplayName("Should return empty array when resource ID has no characteristics")
   void getCharacteristicsByResourceId_WithResourceIdHavingNoCharacteristics_ShouldReturnEmptyArray()
       throws Exception {
-    // Given - Create a new location and resource with no characteristics
-    var newLocation =
+    // Given
+    var location =
         Location.builder()
             .streetAddress("456 Another Street")
             .city("Another City")
             .postalCode("54321")
             .countryCode("EE")
             .build();
-    newLocation = locationRepository.save(newLocation);
-
-    var newResource =
+    location = locationRepository.save(location);
+    var resource =
         Resource.builder()
-            .type(testResource.getType())
-            .countryCode(testResource.getCountryCode())
-            .location(newLocation)
+            .type(ResourceType.CONNECTION_POINT)
+            .countryCode("EE")
+            .location(location)
             .build();
-    newResource = resourceRepository.save(newResource);
+    resource = resourceRepository.save(resource);
 
     // When & Then
     mockMvc
-        .perform(get("/api/characteristics/resource/" + newResource.getId()))
+        .perform(get(CharacteristicsController.API_URL + "/resource/" + resource.getId()))
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$").isArray())
         .andExpect(jsonPath("$").value(org.hamcrest.Matchers.hasSize(0)));
   }
 
-  // POST /api/characteristics/resource/{resourceId} - Create new characteristic
   @Test
   @DisplayName("Should successfully create characteristic with valid data")
   void createCharacteristic_WithValidData_ShouldReturnCreatedCharacteristic() throws Exception {
     // Given
+    var location =
+        Location.builder()
+            .streetAddress("123 Test Street")
+            .city("Test City")
+            .postalCode("12345")
+            .countryCode("EE")
+            .build();
+    location = locationRepository.save(location);
+
+    var resource =
+        Resource.builder()
+            .type(ResourceType.CONNECTION_POINT)
+            .countryCode("EE")
+            .location(location)
+            .build();
+    resource = resourceRepository.save(resource);
+
     var createDto =
         CharacteristicDto.builder()
             .code("NEW1")
@@ -349,27 +577,28 @@ class CharacteristicsControllerIntegrationTest extends BaseIntegrationTest {
             .value("New Characteristic")
             .build();
 
-    // When & Then
+    // When
     mockMvc
         .perform(
-            post("/api/characteristics/resource/" + testResource.getId())
+            post(CharacteristicsController.API_URL + "/resource/" + resource.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(createDto)))
         .andExpect(status().isCreated())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.id").exists())
-        .andExpect(jsonPath("$.resourceId").value(testResource.getId().toString()))
+        .andExpect(jsonPath("$.resourceId").value(resource.getId().toString()))
         .andExpect(jsonPath("$.code").value("NEW1"))
         .andExpect(jsonPath("$.type").value("CONSUMPTION_TYPE"))
         .andExpect(jsonPath("$.value").value("New Characteristic"));
 
-    // Verify the characteristic was actually created in the database
+    // Then
     var allCharacteristics = characteristicRepository.findAll();
+    Resource finalResource = resource;
     var resourceCharacteristics =
         allCharacteristics.stream()
-            .filter(c -> c.getResource().getId().equals(testResource.getId()))
+            .filter(c -> c.getResource().getId().equals(finalResource.getId()))
             .toList();
-    assertThat(resourceCharacteristics).hasSize(2); // Original + new one
+    assertThat(resourceCharacteristics).hasSize(1);
     assertThat(resourceCharacteristics.stream())
         .anyMatch(c -> c.getCode().equals("NEW1") && c.getValue().equals("New Characteristic"));
   }
@@ -377,17 +606,30 @@ class CharacteristicsControllerIntegrationTest extends BaseIntegrationTest {
   @Test
   @DisplayName("Should return 400 when creating characteristic with invalid data")
   void createCharacteristic_WithInvalidData_ShouldReturnBadRequest() throws Exception {
-    // Given - Missing required fields
-    var createDto =
-        CharacteristicDto.builder()
-            .code("NEW1")
-            // Missing type and value
+    // Given
+    var location =
+        Location.builder()
+            .streetAddress("123 Test Street")
+            .city("Test City")
+            .postalCode("12345")
+            .countryCode("EE")
             .build();
+    location = locationRepository.save(location);
+
+    var resource =
+        Resource.builder()
+            .type(ResourceType.CONNECTION_POINT)
+            .countryCode("EE")
+            .location(location)
+            .build();
+    resource = resourceRepository.save(resource);
+
+    var createDto = CharacteristicDto.builder().code("NEW1").build();
 
     // When & Then
     mockMvc
         .perform(
-            post("/api/characteristics/resource/" + testResource.getId())
+            post(CharacteristicsController.API_URL + "/resource/" + resource.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(createDto)))
         .andExpect(status().isBadRequest());
@@ -408,23 +650,49 @@ class CharacteristicsControllerIntegrationTest extends BaseIntegrationTest {
     // When & Then
     mockMvc
         .perform(
-            post("/api/characteristics/resource/" + nonExistentResourceId)
+            post(CharacteristicsController.API_URL + "/resource/" + nonExistentResourceId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(createDto)))
         .andExpect(status().isBadRequest());
   }
 
-  // DELETE /api/characteristics/{id} - Delete characteristic
   @Test
   @DisplayName("Should successfully delete characteristic with valid ID")
   void deleteCharacteristic_WithValidId_ShouldReturnNoContent() throws Exception {
-    // When & Then
+    // Given
+    var location =
+        Location.builder()
+            .streetAddress("123 Test Street")
+            .city("Test City")
+            .postalCode("12345")
+            .countryCode("EE")
+            .build();
+    location = locationRepository.save(location);
+
+    var resource =
+        Resource.builder()
+            .type(ResourceType.CONNECTION_POINT)
+            .countryCode("EE")
+            .location(location)
+            .build();
+    resource = resourceRepository.save(resource);
+
+    var characteristic =
+        Characteristic.builder()
+            .code("TEST1")
+            .type(CharacteristicType.CONSUMPTION_TYPE)
+            .value("Fast Charging")
+            .resource(resource)
+            .build();
+    characteristic = characteristicRepository.save(characteristic);
+
+    // When
     mockMvc
-        .perform(delete("/api/characteristics/" + testCharacteristic.getId()))
+        .perform(delete(CharacteristicsController.API_URL + "/" + characteristic.getId()))
         .andExpect(status().isNoContent());
 
-    // Verify the characteristic was actually deleted from the database
-    var deletedCharacteristic = characteristicRepository.findById(testCharacteristic.getId());
+    // Then
+    var deletedCharacteristic = characteristicRepository.findById(characteristic.getId());
     assertThat(deletedCharacteristic).isEmpty();
   }
 
@@ -436,7 +704,7 @@ class CharacteristicsControllerIntegrationTest extends BaseIntegrationTest {
 
     // When & Then
     mockMvc
-        .perform(delete("/api/characteristics/" + nonExistentId))
+        .perform(delete(CharacteristicsController.API_URL + "/" + nonExistentId))
         .andExpect(status().isNotFound());
   }
 }

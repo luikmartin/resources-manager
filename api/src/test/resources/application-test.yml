@@ -2,6 +2,10 @@ spring:
   application:
     name: resources-manager-test
 
+  # Enable bean definition overriding for tests
+  main:
+    allow-bean-definition-overriding: true
+
   liquibase:
     enabled: false
 
@@ -14,9 +18,30 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
+  # Completely disable Kafka for tests
+  kafka:
+    enabled: true
+    bootstrap-servers: localhost:9092
+    admin:
+      auto-create: false
+      fatal-if-broker-not-available: false
+    producer:
+      acks: 1
+      retries: 1
+      request-timeout-ms: 5000
+      delivery-timeout-ms: 10000
+    consumer:
+      auto-offset-reset: earliest
+      enable-auto-commit: true
+    listener:
+      missing-topics-fatal: false
+
 logging:
   level:
     com.martinluik.resourcesmanager: DEBUG
     org.springframework.web: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    # Reduce Kafka logging noise in tests
+    org.apache.kafka: WARN
+    org.springframework.kafka: WARN
