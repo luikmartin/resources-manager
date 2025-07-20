@@ -52,21 +52,6 @@ You can manually trigger the CI workflow:
 3. Click "Run workflow" button
 4. Choose branch and click "Run workflow"
 
-### Local CI Simulation
-
-Run the same steps locally before pushing:
-
-```bash
-# Build project only
-./gradlew build -x test
-
-# Run unit tests
-./gradlew test
-
-# Run integration tests
-./gradlew integrationTest
-```
-
 ## Prerequisites
 
 - Java JDK 21
@@ -88,7 +73,7 @@ Run the same steps locally before pushing:
 
    ```bash
    cd docker
-   docker-compose up -d postgres kafka kafka-ui
+   docker-compose up -d db kafka kafka-ui
    ```
 
 3. **Verify services are running:**
@@ -125,7 +110,7 @@ docker-compose down
 **Run tests:**
 
 ```bash
-./gradlew test
+./gradlew integrationTest
 ```
 
 **Start the application locally:**
@@ -137,15 +122,7 @@ docker-compose down
 **Build without tests:**
 
 ```bash
-./gradlew build -x test
-```
-
-**Run specific module tests:**
-
-```bash
-./gradlew :api:test
-./gradlew :common:test
-./gradlew :core:test
+./gradlew build -x integrationTest
 ```
 
 ## Docker Quick Start
