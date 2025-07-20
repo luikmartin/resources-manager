@@ -2,9 +2,9 @@ package com.martinluik.resourcesmanager.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.martinluik.resourcesmanager.config.TestContainersConfig;
-import com.martinluik.resourcesmanager.core.repository.CharacteristicRepository;
-import com.martinluik.resourcesmanager.core.repository.LocationRepository;
-import com.martinluik.resourcesmanager.core.repository.ResourceRepository;
+import com.martinluik.resourcesmanager.repository.CharacteristicRepository;
+import com.martinluik.resourcesmanager.repository.LocationRepository;
+import com.martinluik.resourcesmanager.repository.ResourceRepository;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;

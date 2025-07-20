@@ -1,8 +1,8 @@
 package com.martinluik.resourcesmanager.rest;
 
-import com.martinluik.resourcesmanager.common.dto.CharacteristicDto;
-import com.martinluik.resourcesmanager.common.exception.CharacteristicNotFoundException;
-import com.martinluik.resourcesmanager.common.service.CharacteristicService;
+import com.martinluik.resourcesmanager.dto.CharacteristicDto;
+import com.martinluik.resourcesmanager.exception.CharacteristicNotFoundException;
+import com.martinluik.resourcesmanager.service.CharacteristicService;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;

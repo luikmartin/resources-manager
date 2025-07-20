@@ -13,12 +13,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.martinluik.resourcesmanager.common.dto.CharacteristicDto;
-import com.martinluik.resourcesmanager.common.dto.LocationDto;
-import com.martinluik.resourcesmanager.common.dto.ResourceDto;
-import com.martinluik.resourcesmanager.common.enums.CharacteristicType;
-import com.martinluik.resourcesmanager.common.enums.ResourceType;
-import com.martinluik.resourcesmanager.core.config.KafkaConfig;
+import com.martinluik.resourcesmanager.dto.CharacteristicDto;
+import com.martinluik.resourcesmanager.dto.LocationDto;
+import com.martinluik.resourcesmanager.dto.ResourceDto;
+import com.martinluik.resourcesmanager.enums.CharacteristicType;
+import com.martinluik.resourcesmanager.enums.ResourceType;
+import com.martinluik.resourcesmanager.config.KafkaConfig;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;

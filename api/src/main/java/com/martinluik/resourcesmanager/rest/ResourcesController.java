@@ -1,7 +1,7 @@
 package com.martinluik.resourcesmanager.rest;
 
-import com.martinluik.resourcesmanager.common.dto.ResourceDto;
-import com.martinluik.resourcesmanager.common.service.ResourceService;
+import com.martinluik.resourcesmanager.dto.ResourceDto;
+import com.martinluik.resourcesmanager.service.ResourceService;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;

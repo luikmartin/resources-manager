@@ -8,8 +8,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication
 @EnableConfigurationProperties
-@EnableJpaRepositories(basePackages = "com.martinluik.resourcesmanager.core.repository")
-@EntityScan(basePackages = "com.martinluik.resourcesmanager.core.domain")
+@EnableJpaRepositories(basePackages = "com.martinluik.resourcesmanager.repository")
+@EntityScan(basePackages = "com.martinluik.resourcesmanager.domain")
 public class ResourcesManagerApplication {
 
   public static void main(String[] args) {

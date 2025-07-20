@@ -94,6 +94,11 @@ subprojects {
             html.required = true
         }
     }
+
+    tasks.named('clean') {
+        delete 'build', 'out'
+        delete 'src/main/generated'
+    }
 }
 
 // Root project task configurations
@@ -118,10 +123,11 @@ if (project == rootProject) {
         // Make sure unit tests run before integration tests
         mustRunAfter test
     }
-    
-    // Ensure 'clean' on root cleans all subprojects
+
     tasks.named('clean') {
         dependsOn subprojects.collect { it.tasks.named('clean') }
+        delete 'build', 'out'
+        delete 'src/main/generated'
     }
     
     tasks.named('build') {

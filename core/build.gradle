@@ -31,6 +31,15 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
 }
 
+// Configure MapStruct to generate implementations in the same directory as interfaces
+tasks.withType(JavaCompile) {
+    options.compilerArgs = [
+        '-Amapstruct.defaultComponentModel=spring',
+        '-Amapstruct.verbose=true',
+        '-Amapstruct.defaultInjectionStrategy=constructor'
+    ]
+}
+
 tasks.named('test') {
     onlyIf {
         fileTree('src/test/java').matching { include '**/*Test.java' }.files.size() > 0

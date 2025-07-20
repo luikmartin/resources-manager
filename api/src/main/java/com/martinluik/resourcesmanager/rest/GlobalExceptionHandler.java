@@ -1,8 +1,8 @@
 package com.martinluik.resourcesmanager.rest;
 
-import com.martinluik.resourcesmanager.common.exception.CharacteristicNotFoundException;
-import com.martinluik.resourcesmanager.common.exception.LocationNotFoundException;
-import com.martinluik.resourcesmanager.common.exception.ResourceNotFoundException;
+import com.martinluik.resourcesmanager.exception.CharacteristicNotFoundException;
+import com.martinluik.resourcesmanager.exception.LocationNotFoundException;
+import com.martinluik.resourcesmanager.exception.ResourceNotFoundException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;

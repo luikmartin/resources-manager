@@ -31,13 +31,13 @@ public class StartupConfig {
 
     log.info("\n\n🚀 Resources Manager Application is ready!\n");
     log.info("📋 Access URLs:");
-    log.info("   🌐 API Base URL: {}", baseUrl);
-    log.info("   📖 Swagger UI: {}/swagger-ui.html", baseUrl);
-    log.info("   📄 OpenAPI JSON: {}/v3/api-docs", baseUrl);
-    log.info("   📄 OpenAPI YAML: {}/v3/api-docs.yaml", baseUrl);
-    log.info("   ❤️ Health Check: {}/actuator/health", baseUrl);
-    log.info("   🗄️ Database: http://localhost:{}", dbPort);
-    log.info("   📊 Kafka: http://localhost:{}", kafkaPort);
-    log.info("   📊 Kafka UI: http://localhost:{}\n", kafkaUiPort);
+    log.info("🌐 API Base URL: {}", baseUrl);
+    log.info("📖 Swagger UI: {}/swagger-ui.html", baseUrl);
+    log.info("📄 OpenAPI JSON: {}/v3/api-docs", baseUrl);
+    log.info("📄 OpenAPI YAML: {}/v3/api-docs.yaml", baseUrl);
+    log.info("❤️ Health Check: {}/actuator/health", baseUrl);
+    log.info("🗄️ Database: http://localhost:{}", dbPort);
+    log.info("📊 Kafka: http://localhost:{}", kafkaPort);
+    log.info("📊 Kafka UI: http://localhost:{}\n", kafkaUiPort);
   }
 }

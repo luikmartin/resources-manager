@@ -9,12 +9,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.martinluik.resourcesmanager.common.dto.CharacteristicDto;
-import com.martinluik.resourcesmanager.common.enums.CharacteristicType;
-import com.martinluik.resourcesmanager.common.enums.ResourceType;
-import com.martinluik.resourcesmanager.core.domain.Characteristic;
-import com.martinluik.resourcesmanager.core.domain.Location;
-import com.martinluik.resourcesmanager.core.domain.Resource;
+import com.martinluik.resourcesmanager.dto.CharacteristicDto;
+import com.martinluik.resourcesmanager.enums.CharacteristicType;
+import com.martinluik.resourcesmanager.enums.ResourceType;
+import com.martinluik.resourcesmanager.domain.Characteristic;
+import com.martinluik.resourcesmanager.domain.Location;
+import com.martinluik.resourcesmanager.domain.Resource;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
