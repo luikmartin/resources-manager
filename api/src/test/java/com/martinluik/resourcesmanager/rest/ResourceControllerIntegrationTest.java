@@ -258,8 +258,22 @@ class ResourceControllerIntegrationTest extends BaseIntegrationTest {
     assertThat(savedResource1).isNotNull();
     assertThat(savedResource2).isNotNull();
 
-    verify(kafkaTemplate, times(2))
-        .send(eq(KafkaConfig.BULK_EXPORT_TOPIC), anyString(), anyString());
+    var payloadCaptor = ArgumentCaptor.forClass(String.class);
+    verify(kafkaTemplate, times(1))
+        .send(eq(KafkaConfig.BULK_EXPORT_TOPIC), eq("bulk-export"), payloadCaptor.capture());
+
+    var payload = payloadCaptor.getValue();
+    assertThat(payload).contains("CONNECTION_POINT");
+    assertThat(payload).contains("METERING_POINT");
+    assertThat(payload).contains("EE");
+    assertThat(payload).contains("LV");
+    
+    // Verify the message is a valid JSON array containing the expected resources
+    List<ResourceDto> exportedResources = objectMapper.readValue(payload, 
+        objectMapper.getTypeFactory().constructCollectionType(List.class, ResourceDto.class));
+    assertThat(exportedResources).hasSize(2);
+    assertThat(exportedResources).anyMatch(r -> r.getType() == ResourceType.CONNECTION_POINT && "EE".equals(r.getCountryCode()));
+    assertThat(exportedResources).anyMatch(r -> r.getType() == ResourceType.METERING_POINT && "LV".equals(r.getCountryCode()));
   }
 
   @Test
