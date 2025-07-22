@@ -1,11 +1,10 @@
-package com.martinluik.resourcesmanager.rest;
+package com.martinluik.resourcesmanager.config;
 
 import com.martinluik.resourcesmanager.exception.CharacteristicNotFoundException;
 import com.martinluik.resourcesmanager.exception.LocationNotFoundException;
 import com.martinluik.resourcesmanager.exception.ResourceNotFoundException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.Map;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 @Slf4j
 @ControllerAdvice
@@ -43,14 +43,27 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ErrorResponse> handleValidationExceptions(
       MethodArgumentNotValidException ex) {
-    Map<String, String> errors = new HashMap<>();
+    var errors = new HashMap<String, String>();
     ex.getBindingResult()
         .getFieldErrors()
         .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
 
-    String message = "Validation failed: " + errors;
+    var message = "Validation failed: " + errors;
     log.warn("Validation error: {}", message);
     return createErrorResponse(message, HttpStatus.BAD_REQUEST);
+  }
+
+  @ExceptionHandler(HandlerMethodValidationException.class)
+  public ResponseEntity<ErrorResponse> handleHandlerMethodValidationException(
+      HandlerMethodValidationException ex) {
+    log.warn("Handler method validation error: {}", ex.getMessage());
+    return createErrorResponse("Validation failure", HttpStatus.BAD_REQUEST);
+  }
+
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
+    log.warn("Illegal argument: {}", ex.getMessage());
+    return createErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
   }
 
   @ExceptionHandler(Exception.class)
@@ -60,15 +73,14 @@ public class GlobalExceptionHandler {
   }
 
   private ResponseEntity<ErrorResponse> createErrorResponse(String message, HttpStatus status) {
-    ErrorResponse errorResponse =
-        ErrorResponse.builder()
-            .timestamp(LocalDateTime.now())
-            .status(status.value())
-            .error(status.getReasonPhrase())
-            .message(message)
-            .build();
-
-    return ResponseEntity.status(status).body(errorResponse);
+    return ResponseEntity.status(status)
+        .body(
+            ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(status.value())
+                .error(status.getReasonPhrase())
+                .message(message)
+                .build());
   }
 
   @Getter

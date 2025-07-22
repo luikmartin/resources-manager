@@ -6,8 +6,8 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
     <include file="db/liquibase/migrations/2025/03-07-2035-create-schema.sql"/>
-    <include file="db/liquibase/migrations/2025/03-07-2039-create-location-table.sql"/>
-    <include file="db/liquibase/migrations/2025/03-07-2038-create-resource-table.sql"/>
+    <include file="/db/liquibase/migrations/2025/03-07-2038-create-location-table.sql"/>
+    <include file="/db/liquibase/migrations/2025/03-07-2039-create-resource-table.sql"/>
     <include file="db/liquibase/migrations/2025/03-07-2040-create-characteristic-table.sql"/>
     <include file="db/liquibase/migrations/2025/03-07-2041-insert-sample-data.sql"/>
 

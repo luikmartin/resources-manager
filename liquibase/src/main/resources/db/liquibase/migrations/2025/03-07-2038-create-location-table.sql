@@ -1,5 +1,5 @@
 --liquibase formatted sql
---changeset martin.luik:03-07-2039-create-location-table
+--changeset martin.luik:03-07-2038-create-location-table
 CREATE TABLE location
 (
     id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),

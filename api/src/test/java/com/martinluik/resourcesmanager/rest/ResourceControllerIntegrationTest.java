@@ -1,5 +1,17 @@
 package com.martinluik.resourcesmanager.rest;
 
+import static com.martinluik.resourcesmanager.config.KafkaConfig.BULK_EXPORT_TOPIC;
+import static com.martinluik.resourcesmanager.config.KafkaConfig.RESOURCES_UPDATES_TOPIC;
+import static com.martinluik.resourcesmanager.rest.TestFixtures.CHARACTERISTIC_CODE;
+import static com.martinluik.resourcesmanager.rest.TestFixtures.RESOURCE_COUNTRY;
+import static com.martinluik.resourcesmanager.rest.TestFixtures.RESOURCE_COUNTRY2;
+import static com.martinluik.resourcesmanager.rest.TestFixtures.RESOURCE_TYPE;
+import static com.martinluik.resourcesmanager.rest.TestFixtures.RESOURCE_TYPE2;
+import static com.martinluik.resourcesmanager.rest.TestFixtures.constructCharacteristicDto;
+import static com.martinluik.resourcesmanager.rest.TestFixtures.constructLocationDto1;
+import static com.martinluik.resourcesmanager.rest.TestFixtures.constructLocationDto2;
+import static com.martinluik.resourcesmanager.rest.TestFixtures.constructResourceDto;
+import static com.martinluik.resourcesmanager.rest.TestFixtures.constructResourceDto2;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -9,21 +21,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.martinluik.resourcesmanager.dto.CharacteristicDto;
 import com.martinluik.resourcesmanager.dto.LocationDto;
 import com.martinluik.resourcesmanager.dto.ResourceDto;
-import com.martinluik.resourcesmanager.enums.CharacteristicType;
-import com.martinluik.resourcesmanager.enums.ResourceType;
-import com.martinluik.resourcesmanager.config.KafkaConfig;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.MediaType;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -33,99 +37,60 @@ class ResourceControllerIntegrationTest extends BaseIntegrationTest {
   @SpyBean private KafkaTemplate<String, String> kafkaTemplate;
 
   @Test
-  @DisplayName("Should create resource and send Kafka message with correct data")
-  void createResource_ShouldSendKafkaMessage() throws Exception {
+  @DisplayName("createResource_withValidInput_sendsKafkaMessage")
+  void createResource_withValidInput_sendsKafkaMessage() throws Exception {
     // Given
-    var characteristic =
-        CharacteristicDto.builder()
-            .code("TEST1")
-            .type(CharacteristicType.CONSUMPTION_TYPE)
-            .value("Fast Charging")
-            .build();
-
-    var location =
-        LocationDto.builder()
-            .streetAddress("456 New Street")
-            .city("New City")
-            .postalCode("54321")
-            .countryCode("EE")
-            .build();
-
-    var resourceDto =
-        ResourceDto.builder()
-            .type(ResourceType.CONNECTION_POINT)
-            .countryCode("EE")
-            .location(location)
-            .characteristics(List.of(characteristic))
-            .build();
+    var characteristic = constructCharacteristicDto();
+    var location = constructLocationDto2();
+    var resourceDto = constructResourceDto(location, List.of(characteristic));
 
     // When
     var response =
-        mockMvc
-            .perform(
+        MockMvcTestUtils.performAndExpect(
+                mockMvc,
                 post(ResourcesController.API_URL)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(resourceDto)))
-            .andExpect(status().isCreated())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$.id").exists())
-            .andExpect(jsonPath("$.type").value("CONNECTION_POINT"))
-            .andExpect(jsonPath("$.countryCode").value("EE"))
+                    .content(objectMapper.writeValueAsString(resourceDto)),
+                201,
+                MediaType.APPLICATION_JSON)
             .andReturn()
             .getResponse()
             .getContentAsString();
 
     // Then
     var createdResource = objectMapper.readValue(response, ResourceDto.class);
-    Assertions.assertNotNull(createdResource.getId());
-    var savedResource = resourceRepository.findById(createdResource.getId()).orElse(null);
-    assertThat(savedResource).isNotNull();
-    assertThat(savedResource.getType()).isEqualTo(ResourceType.CONNECTION_POINT);
-    assertThat(savedResource.getCountryCode()).isEqualTo("EE");
+    assertThat(createdResource)
+        .extracting(ResourceDto::getId, ResourceDto::getType, ResourceDto::getCountryCode)
+        .satisfies(
+            tuple -> {
+              assertThat(tuple.get(0)).isNotNull();
+              assertThat(tuple.get(1)).isEqualTo(RESOURCE_TYPE);
+              assertThat(tuple.get(2)).isEqualTo(RESOURCE_COUNTRY);
+            });
 
-    var payloadCaptor = ArgumentCaptor.forClass(String.class);
+    var payloadCaptor = org.mockito.ArgumentCaptor.forClass(String.class);
     verify(kafkaTemplate, times(1))
-        .send(eq("resource-updates"), anyString(), payloadCaptor.capture());
+        .send(eq(RESOURCES_UPDATES_TOPIC), anyString(), payloadCaptor.capture());
 
     var payload = payloadCaptor.getValue();
-    assertThat(payload).contains("CONNECTION_POINT");
-    assertThat(payload).contains("EE");
+    assertThat(payload).contains(RESOURCE_TYPE.name()).contains(RESOURCE_COUNTRY);
   }
 
   @Test
-  @DisplayName("Should update resource and send Kafka message with correct data")
-  void updateResource_ShouldSendKafkaMessage() throws Exception {
+  @DisplayName("updateResource_withValidInput_sendsKafkaMessage")
+  void updateResource_withValidInput_sendsKafkaMessage() throws Exception {
     // Given
-    var characteristic =
-        CharacteristicDto.builder()
-            .code("TEST1")
-            .type(CharacteristicType.CONSUMPTION_TYPE)
-            .value("Fast Charging")
-            .build();
-
-    var location =
-        LocationDto.builder()
-            .streetAddress("789 Update Street")
-            .city("Update City")
-            .postalCode("98765")
-            .countryCode("EE")
-            .build();
-
-    var resourceDto =
-        ResourceDto.builder()
-            .type(ResourceType.CONNECTION_POINT)
-            .countryCode("EE")
-            .location(location)
-            .characteristics(List.of(characteristic))
-            .build();
+    var characteristic = constructCharacteristicDto();
+    var location = constructLocationDto2();
+    var resourceDto = constructResourceDto(location, List.of(characteristic));
 
     var createResponse =
-        mockMvc
-            .perform(
+        MockMvcTestUtils.performAndExpect(
+                mockMvc,
                 post(ResourcesController.API_URL)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(resourceDto)))
-            .andExpect(status().isCreated())
+                    .content(objectMapper.writeValueAsString(resourceDto)),
+                201)
             .andReturn()
             .getResponse()
             .getContentAsString();
@@ -135,8 +100,8 @@ class ResourceControllerIntegrationTest extends BaseIntegrationTest {
     var updatedResourceDto =
         ResourceDto.builder()
             .id(createdResource.getId())
-            .type(ResourceType.METERING_POINT)
-            .countryCode("LV")
+            .type(RESOURCE_TYPE2)
+            .countryCode(RESOURCE_COUNTRY2)
             .location(location)
             .characteristics(List.of(characteristic))
             .build();
@@ -144,100 +109,65 @@ class ResourceControllerIntegrationTest extends BaseIntegrationTest {
     // When
     Assertions.assertNotNull(createdResource.getId());
     var updateResponse =
-        mockMvc
-            .perform(
+        MockMvcTestUtils.performAndExpect(
+                mockMvc,
                 put(ResourcesController.API_URL)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(updatedResourceDto)))
-            .andExpect(status().isOk())
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$.id").value(createdResource.getId().toString()))
-            .andExpect(jsonPath("$.type").value("METERING_POINT"))
-            .andExpect(jsonPath("$.countryCode").value("LV"))
+                    .content(objectMapper.writeValueAsString(updatedResourceDto)),
+                200,
+                MediaType.APPLICATION_JSON)
             .andReturn()
             .getResponse()
             .getContentAsString();
 
     // Then
     var updatedResource = objectMapper.readValue(updateResponse, ResourceDto.class);
-    Assertions.assertNotNull(updatedResource.getId());
-    var savedResource = resourceRepository.findById(updatedResource.getId()).orElse(null);
+    assertThat(updatedResource)
+        .extracting(ResourceDto::getId, ResourceDto::getType, ResourceDto::getCountryCode)
+        .satisfies(
+            tuple -> {
+              assertThat(tuple.get(0)).isNotNull();
+              assertThat(tuple.get(1)).isEqualTo(RESOURCE_TYPE2);
+              assertThat(tuple.get(2)).isEqualTo(RESOURCE_COUNTRY2);
+            });
 
-    assertThat(savedResource).isNotNull();
-    assertThat(savedResource.getType()).isEqualTo(ResourceType.METERING_POINT);
-    assertThat(savedResource.getCountryCode()).isEqualTo("LV");
-
-    var payloadCaptor = ArgumentCaptor.forClass(String.class);
+    var payloadCaptor = org.mockito.ArgumentCaptor.forClass(String.class);
     verify(kafkaTemplate, times(2))
-        .send(eq(KafkaConfig.RESOURCES_UPDATES_TOPIC), anyString(), payloadCaptor.capture());
+        .send(eq(RESOURCES_UPDATES_TOPIC), anyString(), payloadCaptor.capture());
 
     var allPayloads = payloadCaptor.getAllValues();
     var updatePayload = allPayloads.getLast();
-    assertThat(updatePayload).contains("METERING_POINT");
-    assertThat(updatePayload).contains("LV");
+    assertThat(updatePayload).contains(RESOURCE_TYPE2.name()).contains(RESOURCE_COUNTRY2);
   }
 
   @Test
-  @DisplayName("Should send bulk export Kafka message with correct data")
-  void exportAllResources_ShouldSendBulkExportKafkaMessage() throws Exception {
+  @DisplayName("exportAllResources_withValidInput_sendsBulkExportKafkaMessage")
+  void exportAllResources_withValidInput_sendsBulkExportKafkaMessage() throws Exception {
     // Given
-    var characteristic =
-        CharacteristicDto.builder()
-            .code("TEST1")
-            .type(CharacteristicType.CONSUMPTION_TYPE)
-            .value("Fast Charging")
-            .build();
-
-    var location1 =
-        LocationDto.builder()
-            .streetAddress("123 First Street")
-            .city("First City")
-            .postalCode("11111")
-            .countryCode("EE")
-            .build();
-
-    var location2 =
-        LocationDto.builder()
-            .streetAddress("456 Second Street")
-            .city("Second City")
-            .postalCode("22222")
-            .countryCode("LV")
-            .build();
-
-    var resource1 =
-        ResourceDto.builder()
-            .type(ResourceType.CONNECTION_POINT)
-            .countryCode("EE")
-            .location(location1)
-            .characteristics(List.of(characteristic))
-            .build();
-
-    var resource2 =
-        ResourceDto.builder()
-            .type(ResourceType.METERING_POINT)
-            .countryCode("LV")
-            .location(location2)
-            .characteristics(List.of(characteristic))
-            .build();
+    var characteristic = constructCharacteristicDto();
+    var location1 = constructLocationDto1();
+    var location2 = constructLocationDto2();
+    var resource1 = constructResourceDto(location1, List.of(characteristic));
+    var resource2 = constructResourceDto2(location2, List.of(characteristic));
 
     var response1 =
-        mockMvc
-            .perform(
+        MockMvcTestUtils.performAndExpect(
+                mockMvc,
                 post(ResourcesController.API_URL)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(resource1)))
-            .andExpect(status().isCreated())
+                    .content(objectMapper.writeValueAsString(resource1)),
+                201)
             .andReturn()
             .getResponse()
             .getContentAsString();
 
     var response2 =
-        mockMvc
-            .perform(
+        MockMvcTestUtils.performAndExpect(
+                mockMvc,
                 post(ResourcesController.API_URL)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(resource2)))
-            .andExpect(status().isCreated())
+                    .content(objectMapper.writeValueAsString(resource2)),
+                201)
             .andReturn()
             .getResponse()
             .getContentAsString();
@@ -246,9 +176,8 @@ class ResourceControllerIntegrationTest extends BaseIntegrationTest {
     var createdResource2 = objectMapper.readValue(response2, ResourceDto.class);
 
     // When
-    mockMvc
-        .perform(post(ResourcesController.API_URL + "/bulk-export"))
-        .andExpect(status().isAccepted());
+    MockMvcTestUtils.performAndExpect(
+        mockMvc, post(ResourcesController.API_URL + "/bulk-export"), 202);
 
     // Then
     Assertions.assertNotNull(createdResource1.getId());
@@ -258,85 +187,59 @@ class ResourceControllerIntegrationTest extends BaseIntegrationTest {
     assertThat(savedResource1).isNotNull();
     assertThat(savedResource2).isNotNull();
 
-    var payloadCaptor = ArgumentCaptor.forClass(String.class);
+    var payloadCaptor = org.mockito.ArgumentCaptor.forClass(String.class);
     verify(kafkaTemplate, times(1))
-        .send(eq(KafkaConfig.BULK_EXPORT_TOPIC), eq("bulk-export"), payloadCaptor.capture());
+        .send(eq(BULK_EXPORT_TOPIC), eq(BULK_EXPORT_TOPIC), payloadCaptor.capture());
 
     var payload = payloadCaptor.getValue();
-    assertThat(payload).contains("CONNECTION_POINT");
-    assertThat(payload).contains("METERING_POINT");
-    assertThat(payload).contains("EE");
-    assertThat(payload).contains("LV");
-    
+    assertThat(payload)
+        .contains(RESOURCE_TYPE.name())
+        .contains(RESOURCE_TYPE2.name())
+        .contains(RESOURCE_COUNTRY)
+        .contains(RESOURCE_COUNTRY2);
+
     // Verify the message is a valid JSON array containing the expected resources
-    List<ResourceDto> exportedResources = objectMapper.readValue(payload, 
-        objectMapper.getTypeFactory().constructCollectionType(List.class, ResourceDto.class));
-    assertThat(exportedResources).hasSize(2);
-    assertThat(exportedResources).anyMatch(r -> r.getType() == ResourceType.CONNECTION_POINT && "EE".equals(r.getCountryCode()));
-    assertThat(exportedResources).anyMatch(r -> r.getType() == ResourceType.METERING_POINT && "LV".equals(r.getCountryCode()));
+    java.util.List<ResourceDto> exportedResources =
+        objectMapper.readValue(
+            payload,
+            objectMapper
+                .getTypeFactory()
+                .constructCollectionType(java.util.List.class, ResourceDto.class));
+    assertThat(exportedResources)
+        .hasSize(2)
+        .anyMatch(r -> r.getType() == RESOURCE_TYPE && RESOURCE_COUNTRY.equals(r.getCountryCode()))
+        .anyMatch(
+            r -> r.getType() == RESOURCE_TYPE2 && RESOURCE_COUNTRY2.equals(r.getCountryCode()));
   }
 
   @Test
-  @DisplayName("Should retrieve all resources")
-  void getAllResources_ShouldReturnAllResources() throws Exception {
+  @DisplayName("getAllResources_withExistingResources_returnsAllResources")
+  void getAllResources_withExistingResources_returnsAllResources() throws Exception {
     // Given
-    var characteristic =
-        CharacteristicDto.builder()
-            .code("TEST1")
-            .type(CharacteristicType.CONSUMPTION_TYPE)
-            .value("Fast Charging")
-            .build();
-
-    var location1 =
-        LocationDto.builder()
-            .streetAddress("123 First Street")
-            .city("First City")
-            .postalCode("11111")
-            .countryCode("EE")
-            .build();
-
-    var location2 =
-        LocationDto.builder()
-            .streetAddress("456 Second Street")
-            .city("Second City")
-            .postalCode("22222")
-            .countryCode("LV")
-            .build();
-
-    var resource1 =
-        ResourceDto.builder()
-            .type(ResourceType.CONNECTION_POINT)
-            .countryCode("EE")
-            .location(location1)
-            .characteristics(List.of(characteristic))
-            .build();
-
-    var resource2 =
-        ResourceDto.builder()
-            .type(ResourceType.METERING_POINT)
-            .countryCode("LV")
-            .location(location2)
-            .characteristics(List.of(characteristic))
-            .build();
+    var characteristic = constructCharacteristicDto();
+    var location1 = constructLocationDto1();
+    var location2 = constructLocationDto2();
+    var resource1 = constructResourceDto(location1, List.of(characteristic));
+    var resource2 = constructResourceDto2(location2, List.of(characteristic));
 
     var response1 =
-        mockMvc
-            .perform(
+        MockMvcTestUtils.performAndExpect(
+                mockMvc,
                 post(ResourcesController.API_URL)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(resource1)))
-            .andExpect(status().isCreated())
+                    .content(objectMapper.writeValueAsString(resource1)),
+                201)
             .andReturn()
             .getResponse()
             .getContentAsString();
 
     var response2 =
-        mockMvc
-            .perform(
+        MockMvcTestUtils.performAndExpect(
+                mockMvc,
                 post(ResourcesController.API_URL)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(resource2)))
-            .andExpect(status().isCreated())
+                    .content(objectMapper.writeValueAsString(resource2)),
+                201)
             .andReturn()
             .getResponse()
             .getContentAsString();
@@ -345,53 +248,47 @@ class ResourceControllerIntegrationTest extends BaseIntegrationTest {
     var createdResource2 = objectMapper.readValue(response2, ResourceDto.class);
 
     // When & Then
-    mockMvc
-        .perform(get(ResourcesController.API_URL))
-        .andExpect(status().isOk())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$").isArray())
-        .andExpect(jsonPath("$[0].id").value(createdResource1.getId().toString()))
-        .andExpect(jsonPath("$[0].type").value("CONNECTION_POINT"))
-        .andExpect(jsonPath("$[0].countryCode").value("EE"))
-        .andExpect(jsonPath("$[1].id").value(createdResource2.getId().toString()))
-        .andExpect(jsonPath("$[1].type").value("METERING_POINT"))
-        .andExpect(jsonPath("$[1].countryCode").value("LV"));
+    MockMvcTestUtils.performAndExpect(
+            mockMvc, get(ResourcesController.API_URL), 200, MediaType.APPLICATION_JSON)
+        .andReturn()
+        .getResponse()
+        .getContentAsString();
+
+    // Then
+    java.util.List<ResourceDto> allResources =
+        objectMapper.readValue(
+            MockMvcTestUtils.performAndExpect(
+                    mockMvc, get(ResourcesController.API_URL), 200, MediaType.APPLICATION_JSON)
+                .andReturn()
+                .getResponse()
+                .getContentAsString(),
+            objectMapper
+                .getTypeFactory()
+                .constructCollectionType(java.util.List.class, ResourceDto.class));
+    assertThat(allResources).hasSize(2);
+    assertThat(allResources.get(0))
+        .extracting(ResourceDto::getId, ResourceDto::getType, ResourceDto::getCountryCode)
+        .containsExactly(createdResource1.getId(), RESOURCE_TYPE, RESOURCE_COUNTRY);
+    assertThat(allResources.get(1))
+        .extracting(ResourceDto::getId, ResourceDto::getType, ResourceDto::getCountryCode)
+        .containsExactly(createdResource2.getId(), RESOURCE_TYPE2, RESOURCE_COUNTRY2);
   }
 
   @Test
-  @DisplayName("Should retrieve resource by ID")
-  void getResourceById_ShouldReturnResource() throws Exception {
+  @DisplayName("getResourceById_withValidId_returnsResource")
+  void getResourceById_withValidId_returnsResource() throws Exception {
     // Given
-    var characteristic =
-        CharacteristicDto.builder()
-            .code("TEST1")
-            .type(CharacteristicType.CONSUMPTION_TYPE)
-            .value("Fast Charging")
-            .build();
-
-    var location =
-        LocationDto.builder()
-            .streetAddress("123 Test Street")
-            .city("Test City")
-            .postalCode("12345")
-            .countryCode("EE")
-            .build();
-
-    var resourceDto =
-        ResourceDto.builder()
-            .type(ResourceType.CONNECTION_POINT)
-            .countryCode("EE")
-            .location(location)
-            .characteristics(List.of(characteristic))
-            .build();
+    var characteristic = constructCharacteristicDto();
+    var location = constructLocationDto1();
+    var resourceDto = constructResourceDto(location, List.of(characteristic));
 
     var createResponse =
-        mockMvc
-            .perform(
+        MockMvcTestUtils.performAndExpect(
+                mockMvc,
                 post(ResourcesController.API_URL)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(resourceDto)))
-            .andExpect(status().isCreated())
+                    .content(objectMapper.writeValueAsString(resourceDto)),
+                201)
             .andReturn()
             .getResponse()
             .getContentAsString();
@@ -399,79 +296,78 @@ class ResourceControllerIntegrationTest extends BaseIntegrationTest {
     var createdResource = objectMapper.readValue(createResponse, ResourceDto.class);
 
     // When & Then
-      Assertions.assertNotNull(createdResource.getId());
-      mockMvc
-        .perform(get(ResourcesController.API_URL + "/" + createdResource.getId()))
-        .andExpect(status().isOk())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.id").value(createdResource.getId().toString()))
-        .andExpect(jsonPath("$.type").value("CONNECTION_POINT"))
-        .andExpect(jsonPath("$.countryCode").value("EE"))
-        .andExpect(jsonPath("$.location.streetAddress").value("123 Test Street"))
-        .andExpect(jsonPath("$.location.city").value("Test City"))
-        .andExpect(jsonPath("$.characteristics[0].code").value("TEST1"));
+    Assertions.assertNotNull(createdResource.getId());
+    MockMvcTestUtils.performAndExpect(
+            mockMvc,
+            get(ResourcesController.API_URL + "/" + createdResource.getId()),
+            200,
+            MediaType.APPLICATION_JSON)
+        .andReturn()
+        .getResponse()
+        .getContentAsString();
+
+    // Then
+    var foundResource =
+        objectMapper.readValue(
+            MockMvcTestUtils.performAndExpect(
+                    mockMvc,
+                    get(ResourcesController.API_URL + "/" + createdResource.getId()),
+                    200,
+                    MediaType.APPLICATION_JSON)
+                .andReturn()
+                .getResponse()
+                .getContentAsString(),
+            ResourceDto.class);
+    assertThat(foundResource)
+        .extracting(ResourceDto::getId, ResourceDto::getType, ResourceDto::getCountryCode)
+        .containsExactly(createdResource.getId(), RESOURCE_TYPE, RESOURCE_COUNTRY);
+    assertThat(foundResource.getLocation())
+        .extracting(LocationDto::getStreetAddress, LocationDto::getCity)
+        .containsExactly(
+            constructLocationDto1().getStreetAddress(), constructLocationDto1().getCity());
+    assertThat(foundResource.getCharacteristics().getFirst().getCode())
+        .isEqualTo(CHARACTERISTIC_CODE);
   }
 
   @Test
-  @DisplayName("Should return 404 when resource not found by ID")
-  void getResourceById_ShouldReturn404WhenNotFound() throws Exception {
+  @DisplayName("getResourceById_withNonExistentId_returns404")
+  void getResourceById_withNonExistentId_returns404() throws Exception {
     // Given
     var nonExistentId = "550e8400-e29b-41d4-a716-446655440000";
 
     // When & Then
-    mockMvc
-        .perform(get(ResourcesController.API_URL + "/" + nonExistentId))
-        .andExpect(status().isNotFound());
+    MockMvcTestUtils.performAndExpect(
+        mockMvc, get(ResourcesController.API_URL + "/" + nonExistentId), 404);
   }
 
   @Test
-  @DisplayName("Should delete resource by ID")
-  void deleteResourceById_ShouldDeleteResource() throws Exception {
+  @DisplayName("deleteResourceById_withValidId_deletesResource")
+  void deleteResourceById_withValidId_deletesResource() throws Exception {
     // Given
-    var characteristic =
-        CharacteristicDto.builder()
-            .code("TEST1")
-            .type(CharacteristicType.CONSUMPTION_TYPE)
-            .value("Fast Charging")
-            .build();
-
-    var location =
-        LocationDto.builder()
-            .streetAddress("123 Delete Street")
-            .city("Delete City")
-            .postalCode("12345")
-            .countryCode("EE")
-            .build();
-
-    var resourceDto =
-        ResourceDto.builder()
-            .type(ResourceType.CONNECTION_POINT)
-            .countryCode("EE")
-            .location(location)
-            .characteristics(List.of(characteristic))
-            .build();
+    var characteristic = constructCharacteristicDto();
+    var location = constructLocationDto1();
+    var resourceDto = constructResourceDto(location, List.of(characteristic));
 
     var createResponse =
-        mockMvc
-            .perform(
+        MockMvcTestUtils.performAndExpect(
+                mockMvc,
                 post(ResourcesController.API_URL)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(resourceDto)))
-            .andExpect(status().isCreated())
+                    .content(objectMapper.writeValueAsString(resourceDto)),
+                201)
             .andReturn()
             .getResponse()
             .getContentAsString();
 
     var createdResource = objectMapper.readValue(createResponse, ResourceDto.class);
 
-      Assertions.assertNotNull(createdResource.getId());
-      var savedResource = resourceRepository.findById(createdResource.getId()).orElse(null);
+    Assertions.assertNotNull(createdResource.getId());
+    var savedResource = resourceRepository.findById(createdResource.getId()).orElse(null);
     assertThat(savedResource).isNotNull();
 
     // When
-    mockMvc
-        .perform(delete(ResourcesController.API_URL + "/" + createdResource.getId()))
-        .andExpect(status().isNoContent());
+    MockMvcTestUtils.performAndExpect(
+        mockMvc, delete(ResourcesController.API_URL + "/" + createdResource.getId()), 204);
 
     // Then
     var deletedResource = resourceRepository.findById(createdResource.getId()).orElse(null);
@@ -479,14 +375,13 @@ class ResourceControllerIntegrationTest extends BaseIntegrationTest {
   }
 
   @Test
-  @DisplayName("Should return 404 when deleting non-existent resource")
-  void deleteResourceById_ShouldReturn404WhenNotFound() throws Exception {
+  @DisplayName("deleteResourceById_withNonExistentId_returns404")
+  void deleteResourceById_withNonExistentId_returns404() throws Exception {
     // Given
     var nonExistentId = "550e8400-e29b-41d4-a716-446655440000";
 
     // When & Then
-    mockMvc
-        .perform(delete(ResourcesController.API_URL + "/" + nonExistentId))
-        .andExpect(status().isNotFound());
+    MockMvcTestUtils.performAndExpect(
+        mockMvc, delete(ResourcesController.API_URL + "/" + nonExistentId), 404);
   }
 }
